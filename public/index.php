@@ -126,6 +126,7 @@ $router->post('/procesos/editar-proceso', function () { require_once BASE_PATH.'
 $router->post('/procesos/crear-procedimiento', function () { require_once BASE_PATH.'/src/Controllers/ProcesosController.php'; (new ProcesosController())->crearProcedimiento(); });
 $router->post('/procesos/crear-tarea', function () { require_once BASE_PATH.'/src/Controllers/ProcesosController.php'; (new ProcesosController())->crearTarea(); });
 $router->post('/procesos/eliminar-tarea', function () { require_once BASE_PATH.'/src/Controllers/ProcesosController.php'; (new ProcesosController())->eliminarTarea(); });
+$router->get('/procesos/workflows', function () { require_once BASE_PATH.'/src/Controllers/ProcesosController.php'; (new ProcesosController())->workflows(); });
 
 // ===== CALIDAD =====
 $router->get('/calidad', function () { require_once BASE_PATH.'/src/Controllers/CalidadController.php'; (new CalidadController())->dashboard(); });
@@ -301,15 +302,12 @@ $router->post('/financiero/eliminar', function () { require_once BASE_PATH.'/lib
 
 // ===== EXPORT PDF =====
 $router->get('/planeacion/{id}/pdf', function ($id) {
+    require_once BASE_PATH.'/lib/PlanPDF.php';
     $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost:81';
     $html = file_get_contents("$proto://$host/planeacion/$id/reporte?print=1");
-    $tmp = tempnam(sys_get_temp_dir(), 'report_').'.html';
-    file_put_contents($tmp, $html);
-    $pdf = str_replace('.html','.pdf',$tmp);
-    exec("pandoc $tmp -o $pdf --pdf-engine=xelatex -V lang=es -V geometry:margin=1.5cm 2>/dev/null");
-    if (file_exists($pdf)) { header('Content-Type: application/pdf'); header('Content-Disposition: attachment; filename="reporte_'.$id.'.pdf"'); readfile($pdf); unlink($tmp); unlink($pdf); exit; }
-    header('Location: /planeacion/'.$id.'/reporte');
+    PlanPDF::generarDesdeHTML($html, "reporte_$id.pdf");
+    exit;
 });
 
 // ===== DOCUMENTACIÓN =====
@@ -387,6 +385,7 @@ $router->get('/login', function () {
 $router->get('/', function () { require_once BASE_PATH.'/src/Controllers/SIGController.php'; (new SIGController())->index(); });
 $router->get('/sig', function () { require_once BASE_PATH.'/src/Controllers/SIGController.php'; (new SIGController())->index(); });
 $router->get('/dashboard', function () { require_once BASE_PATH.'/src/Controllers/DashboardController.php'; (new DashboardController())->index(); });
+$router->get('/dashboards', function () { require_once BASE_PATH.'/src/Controllers/DashboardController.php'; (new DashboardController())->tableros(); });
 $router->get('/calendario', function () { require_once BASE_PATH.'/src/Controllers/CalendarioController.php'; (new CalendarioController())->index(); });
 $router->get('/ia', function () { require_once BASE_PATH.'/src/Controllers/IAController.php'; (new IAController())->index(); });
 $router->get('/formacion', function () { require_once BASE_PATH.'/src/Controllers/ExtrasController.php'; (new ExtrasController())->formacion(); });
@@ -415,6 +414,7 @@ $router->get('/admin/config', function () { require_once BASE_PATH.'/src/Control
 $router->get('/config', function () { header('Location: /admin/config'); exit; });
 $router->post('/admin/config/asignar-usuario', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->asignarUsuarioEmpresa(); });
 $router->post('/admin/config/crear-empresa', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->crearEmpresa(); });
+$router->post('/admin/config/editar-empresa', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->editarEmpresa(); });
 $router->post('/admin/config/guardar-personalizacion', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->guardarPersonalizacion(); });
 
 // ===== LICENCIAS (SUPER_ADMIN only) — Politica 23 §5.3 =====
@@ -437,6 +437,124 @@ $router->get('/docs/openapi.json', function () {
 });
 
 // ===== SSE DASHBOARD TIEMPO REAL =====
+$router->get('/api/alertas/vencimientos', function () {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Access-Control-Allow-Origin: *');
+    require_once BASE_PATH . '/lib/EstrateGiaCore.php';
+    require_once BASE_PATH . '/src/Auth.php';
+    Auth::guard();
+    $core = EstrateGiaCore::getInstance();
+    $empresaId = (int)($_GET['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+    $dias = (int)($_GET['dias'] ?? 30);
+    $dias_corte = min($dias, 90);
+
+    $alertas = [];
+    $resumen = [
+        'requisitos_legales_sst' => 0,
+        'requisitos_legales_ambiental' => 0,
+        'evaluaciones_proveedores' => 0,
+        'simulacros' => 0,
+        'metas_ambientales_bajo_avance' => 0,
+    ];
+
+    $reqLegalesSST = $core->fetchAll(
+        "SELECT sst_req_id, sst_req_norma, sst_req_fecha_limite FROM sst_requisitos_legales WHERE empresa_id=? AND sst_req_fecha_limite <= DATE_ADD(CURDATE(), INTERVAL ? DAY) AND sst_req_fecha_limite >= CURDATE() ORDER BY sst_req_fecha_limite ASC",
+        [$empresaId, $dias_corte]
+    );
+    foreach ($reqLegalesSST as $r) {
+        $alertas[] = [
+            'tipo' => 'requisito_legal_sst',
+            'nombre' => $r['sst_req_norma'],
+            'fecha_limite' => $r['sst_req_fecha_limite'],
+            'dias_restantes' => max(0, (int)((strtotime($r['sst_req_fecha_limite']) - time()) / 86400)),
+            'color' => '#ffc107',
+            'link' => '/sst?seccion=normatividad',
+        ];
+    }
+    $resumen['requisitos_legales_sst'] = count($reqLegalesSST);
+
+    $reqAmbVencer = $core->fetchAll(
+        "SELECT amb_req_id, amb_req_norma, amb_req_fecha_limite FROM amb_requisitos_legales WHERE empresa_id=? AND amb_req_fecha_limite <= DATE_ADD(CURDATE(), INTERVAL ? DAY) AND amb_req_fecha_limite >= CURDATE() ORDER BY amb_req_fecha_limite ASC",
+        [$empresaId, $dias_corte]
+    );
+    foreach ($reqAmbVencer as $r) {
+        $alertas[] = [
+            'tipo' => 'requisito_legal_ambiental',
+            'nombre' => $r['amb_req_norma'],
+            'fecha_limite' => $r['amb_req_fecha_limite'],
+            'dias_restantes' => max(0, (int)((strtotime($r['amb_req_fecha_limite']) - time()) / 86400)),
+            'color' => '#28a745',
+            'link' => '/ambiental?seccion=normatividad',
+        ];
+    }
+    $resumen['requisitos_legales_ambiental'] = count($reqAmbVencer);
+
+    $proveedoresVencer = $core->fetchAll(
+        "SELECT prov_id, prov_nombre, prov_proxima_evaluacion FROM cal_proveedores WHERE prov_empresa_id=? AND prov_estado='activo' AND prov_proxima_evaluacion <= DATE_ADD(CURDATE(), INTERVAL ? DAY) AND prov_proxima_evaluacion >= CURDATE() ORDER BY prov_proxima_evaluacion ASC",
+        [$empresaId, $dias_corte]
+    );
+    foreach ($proveedoresVencer as $p) {
+        $alertas[] = [
+            'tipo' => 'evaluacion_proveedor',
+            'nombre' => $p['prov_nombre'],
+            'fecha_limite' => $p['prov_proxima_evaluacion'],
+            'dias_restantes' => max(0, (int)((strtotime($p['prov_proxima_evaluacion']) - time()) / 86400)),
+            'color' => '#007bff',
+            'link' => '/proveedores/ver/' . $p['prov_id'],
+        ];
+    }
+    $resumen['evaluaciones_proveedores'] = count($proveedoresVencer);
+
+    $simulacrosVencer = $core->fetchAll(
+        "SELECT sst_eme_id, sst_eme_nombre, sst_eme_proximo_simulacro FROM sst_emergencias WHERE empresa_id=? AND sst_eme_proximo_simulacro <= DATE_ADD(CURDATE(), INTERVAL ? DAY) AND sst_eme_proximo_simulacro >= CURDATE() ORDER BY sst_eme_proximo_simulacro ASC",
+        [$empresaId, $dias_corte]
+    );
+    foreach ($simulacrosVencer as $s) {
+        $alertas[] = [
+            'tipo' => 'simulacro',
+            'nombre' => $s['sst_eme_nombre'],
+            'fecha_limite' => $s['sst_eme_proximo_simulacro'],
+            'dias_restantes' => max(0, (int)((strtotime($s['sst_eme_proximo_simulacro']) - time()) / 86400)),
+            'color' => '#dc3545',
+            'link' => '/sst?seccion=emergencias',
+        ];
+    }
+    $resumen['simulacros'] = count($simulacrosVencer);
+
+    $metasBajoAvance = $core->fetchAll(
+        "SELECT meta_id, meta_nombre, meta_tipo, meta_valor_objetivo, meta_valor_actual, meta_unidad, meta_anio FROM amb_metas_ambientales WHERE empresa_id=? AND meta_estado='activa' AND meta_valor_objetivo > 0 AND (meta_valor_actual / meta_valor_objetivo) < 0.5 ORDER BY (meta_valor_actual / meta_valor_objetivo) ASC",
+        [$empresaId]
+    );
+    foreach ($metasBajoAvance as $m) {
+        $avance = round(((float)$m['meta_valor_actual'] / (float)$m['meta_valor_objetivo']) * 100, 1);
+        $alertas[] = [
+            'tipo' => 'meta_ambiental',
+            'nombre' => $m['meta_nombre'] . ' (' . $m['meta_anio'] . ')',
+            'fecha_limite' => $m['meta_anio'] . '-12-31',
+            'dias_restantes' => max(0, (int)((strtotime($m['meta_anio'] . '-12-31') - time()) / 86400)),
+            'avance_pct' => $avance,
+            'valor_objetivo' => (float)$m['meta_valor_objetivo'],
+            'valor_actual' => (float)$m['meta_valor_actual'],
+            'unidad' => $m['meta_unidad'],
+            'color' => '#fd7e14',
+            'link' => '/ambiental?seccion=metas',
+        ];
+    }
+    $resumen['metas_ambientales_bajo_avance'] = count($metasBajoAvance);
+
+    usort($alertas, fn($a, $b) => ($a['dias_restantes'] ?? 365) - ($b['dias_restantes'] ?? 365));
+
+    echo json_encode([
+        'total' => count($alertas),
+        'fecha_consulta' => date('Y-m-d H:i:s'),
+        'empresa_id' => $empresaId,
+        'dias_ventana' => $dias_corte,
+        'resumen' => $resumen,
+        'alertas' => $alertas,
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    exit;
+});
+
 $router->get('/sse/dashboard', function () { require BASE_PATH . '/sse_dashboard.php'; });
 
 // ===== TEST RUNNER =====
@@ -474,7 +592,8 @@ if (str_ends_with($uri, '/index.php') || $uri === '/index.php') $uri = '/';
 
 
 // Rutas /api/ van a api.php (REST con JWT)
-if (str_starts_with($uri, '/api/')) {
+// Excepción: /api/alertas/vencimientos se maneja en el router
+if (str_starts_with($uri, '/api/') && strtok($uri, '?') !== '/api/alertas/vencimientos') {
     require_once BASE_PATH . '/public/api.php';
     exit;
 }

@@ -38,7 +38,7 @@
             <div class="col-md-8">
                 <div class="card-box"><div class="card-box-header">Empresas Registradas (<?= count($empresas) ?>)</div>
                 <div class="card-box-body p-0"><table class="table-box">
-                    <thead><tr><th>Nombre</th><th>NIT</th><th>Sector</th><th>Dirección</th><th>Planes</th></tr></thead>
+                    <thead><tr><th>Nombre</th><th>NIT</th><th>Sector</th><th>Dirección</th><th>Planes</th><th></th></tr></thead>
                     <tbody>
                     <?php foreach ($empresas as $e): 
                         $planesEmp = array_filter($planes, fn($p)=>$p['plan_empresa_id']==$e['empresa_id']);
@@ -49,6 +49,9 @@
                         <td><span class="badge bg-light text-dark"><?= htmlspecialchars($e['sector_nombre']??'General') ?></span></td>
                         <td><small><?= htmlspecialchars($e['empresa_direccion']??'-') ?></small></td>
                         <td><?= count($planesEmp) ?></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-secondary" title="Editar" onclick="editarEmpresa(<?= $e['empresa_id'] ?>,'<?= htmlspecialchars(addslashes($e['empresa_nombre'])) ?>','<?= htmlspecialchars(addslashes($e['empresa_razon_social']??'')) ?>','<?= htmlspecialchars(addslashes($e['empresa_nit']??'')) ?>',<?= $e['empresa_sector_id']??'null' ?>,'<?= htmlspecialchars(addslashes($e['empresa_direccion']??'')) ?>','<?= htmlspecialchars(addslashes($e['empresa_telefono']??'')) ?>','<?= htmlspecialchars(addslashes($e['empresa_email']??'')) ?>')"><i class="fas fa-edit"></i></button>
+                        </td>
                     </tr>
                     <?php endforeach; ?>
                     </tbody>
@@ -142,3 +145,42 @@
         </div></div>
     </div>
 </div>
+
+<!-- Modal Editar Empresa -->
+<div class="modal fade" id="modalEditarEmpresa" tabindex="-1">
+    <div class="modal-dialog"><form method="POST" action="/admin/config/editar-empresa" class="modal-content">
+        <input type="hidden" name="empresa_id" id="editEmpId">
+        <div class="modal-header"><h5 class="modal-title"><i class="fas fa-edit me-2"></i>Editar Empresa</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+            <input type="text" name="nombre" id="editEmpNombre" class="form-control form-control-sm mb-2" placeholder="Nombre *" required>
+            <div class="row g-2 mb-2">
+                <div class="col-8"><input type="text" name="razon_social" id="editEmpRazon" class="form-control form-control-sm" placeholder="Razón social"></div>
+                <div class="col-4"><input type="text" name="nit" id="editEmpNit" class="form-control form-control-sm" placeholder="NIT"></div>
+            </div>
+            <select name="sector_id" id="editEmpSector" class="form-select form-select-sm mb-2">
+                <option value="">Sector económico</option>
+                <?php foreach ($sectores as $s): ?><option value="<?= $s['sector_id'] ?>"><?= htmlspecialchars($s['sector_nombre']) ?></option><?php endforeach; ?>
+            </select>
+            <input type="text" name="direccion" id="editEmpDir" class="form-control form-control-sm mb-2" placeholder="Dirección">
+            <div class="row g-2 mb-2">
+                <div class="col-6"><input type="text" name="telefono" id="editEmpTel" class="form-control form-control-sm" placeholder="Teléfono"></div>
+                <div class="col-6"><input type="email" name="email" id="editEmpEmail" class="form-control form-control-sm" placeholder="Email"></div>
+            </div>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-primary">Guardar Cambios</button></div>
+    </form></div>
+</div>
+
+<script>
+function editarEmpresa(id, nombre, razon, nit, sector, dir, tel, email) {
+    document.getElementById('editEmpId').value = id;
+    document.getElementById('editEmpNombre').value = nombre;
+    document.getElementById('editEmpRazon').value = razon;
+    document.getElementById('editEmpNit').value = nit;
+    document.getElementById('editEmpSector').value = sector || '';
+    document.getElementById('editEmpDir').value = dir;
+    document.getElementById('editEmpTel').value = tel;
+    document.getElementById('editEmpEmail').value = email;
+    new bootstrap.Modal(document.getElementById('modalEditarEmpresa')).show();
+}
+</script>

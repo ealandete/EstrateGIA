@@ -203,4 +203,28 @@ class ProcesosController {
         EstrateGiaCore::getInstance()->logAction(Auth::userId(), 'eliminar', 'procesos', 'tarea', $id); header('Location: /procesos/ver/' . $procesoId . '?deleted=t');
         exit;
     }
+
+    // ========================================================================
+    // WORKFLOWS
+    // ========================================================================
+    public function workflows(): void {
+        $pm = new PlanManager();
+        $empresaId = (int)($_GET['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $empresa = $pm->getEmpresa($empresaId);
+
+        $workflows = $this->safeAll(
+            "SELECT w.*, p.proceso_nombre, p.proceso_codigo,
+                    m.macro_nombre, m.macro_tipo
+             FROM proc_workflows w
+             JOIN proc_procesos p ON w.workflow_proceso_id = p.proceso_id
+             JOIN proc_macroprocesos m ON p.proceso_macro_id = m.macro_id
+             WHERE w.workflow_activo = 1 AND m.macro_empresa_id = ?
+             ORDER BY m.macro_tipo, p.proceso_nombre, w.workflow_nombre",
+            [$empresaId]
+        );
+
+        $pageTitle = 'Workflows de Procesos';
+        ob_start(); require BASE_PATH . '/templates/procesos/workflows.php';
+        $content = ob_get_clean(); require BASE_PATH . '/templates/layout.php';
+    }
 }

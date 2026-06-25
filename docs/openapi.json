@@ -2,60 +2,531 @@
   "openapi": "3.0.0",
   "info": {
     "title": "EstrateGIA API",
-    "version": "1.0.0",
-    "description": "API REST del Sistema de Gestión de Planeación Estratégica con IA"
+    "version": "2.1.0",
+    "description": "API REST del Sistema Integrado de Gestión EstrateGIA - Planeación Estratégica, SST, Ambiental, Calidad, Procesos, Indicadores y más.",
+    "contact": {
+      "name": "Equipo EstrateGIA",
+      "email": "soporte@estrategia.local"
+    }
   },
-  "servers": [{"url": "http://localhost:81", "description": "Servidor local"}],
-  "security": [{"bearerAuth": []}],
+  "servers": [
+    { "url": "http://localhost:81", "description": "Servidor local" },
+    { "url": "http://localhost:90", "description": "Servidor de desarrollo" }
+  ],
+  "security": [{ "bearerAuth": [] }],
   "components": {
     "securitySchemes": {
-      "bearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"}
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Empresa": {
+        "type": "object",
+        "properties": {
+          "empresa_id": { "type": "integer" },
+          "empresa_nombre": { "type": "string" },
+          "empresa_razon_social": { "type": "string" },
+          "empresa_nit": { "type": "string" },
+          "empresa_email": { "type": "string" },
+          "empresa_telefono": { "type": "string" },
+          "empresa_direccion": { "type": "string" },
+          "empresa_activo": { "type": "boolean" }
+        }
+      },
+      "Plan": {
+        "type": "object",
+        "properties": {
+          "plan_id": { "type": "integer" },
+          "plan_empresa_id": { "type": "integer" },
+          "plan_metodologia_id": { "type": "integer" },
+          "plan_nombre": { "type": "string" },
+          "plan_estado": { "type": "string", "enum": ["borrador", "en_proceso", "revision", "aprobado", "ejecucion", "completado", "cancelado"] },
+          "plan_avance_porcentaje": { "type": "number" },
+          "plan_fecha_inicio": { "type": "string", "format": "date" },
+          "plan_fecha_fin": { "type": "string", "format": "date" },
+          "plan_periodo": { "type": "string" }
+        }
+      },
+      "Objetivo": {
+        "type": "object",
+        "properties": {
+          "objetivo_id": { "type": "integer" },
+          "objetivo_plan_id": { "type": "integer" },
+          "objetivo_codigo": { "type": "string" },
+          "objetivo_nombre": { "type": "string" },
+          "objetivo_perspectiva": { "type": "string", "enum": ["financiera", "cliente", "procesos", "aprendizaje", "sostenibilidad", "otra"] },
+          "objetivo_avance_porcentaje": { "type": "number" },
+          "objetivo_estado": { "type": "string" }
+        }
+      },
+      "Indicador": {
+        "type": "object",
+        "properties": {
+          "indicador_id": { "type": "integer" },
+          "indicador_nombre": { "type": "string" },
+          "indicador_formula": { "type": "string" },
+          "indicador_unidad_medida": { "type": "string" },
+          "indicador_rango_maximo": { "type": "number" },
+          "indicador_frecuencia_medicion": { "type": "string" }
+        }
+      },
+      "Medicion": {
+        "type": "object",
+        "properties": {
+          "medicion_id": { "type": "integer" },
+          "medicion_indicador_id": { "type": "integer" },
+          "medicion_valor": { "type": "number" },
+          "medicion_fecha": { "type": "string", "format": "date" },
+          "medicion_semaforo": { "type": "string", "enum": ["verde", "amarillo", "rojo"] }
+        }
+      },
+      "Proceso": {
+        "type": "object",
+        "properties": {
+          "proceso_id": { "type": "integer" },
+          "proceso_nombre": { "type": "string" },
+          "proceso_estado": { "type": "string" },
+          "proceso_macro_id": { "type": "integer" }
+        }
+      },
+      "Documento": {
+        "type": "object",
+        "properties": {
+          "documento_id": { "type": "integer" },
+          "documento_titulo": { "type": "string" },
+          "documento_codigo": { "type": "string" },
+          "documento_tipo": { "type": "string" },
+          "documento_version": { "type": "string" },
+          "documento_estado": { "type": "string", "enum": ["borrador", "revision", "aprobado", "publicado", "obsoleto"] }
+        }
+      },
+      "NC": {
+        "type": "object",
+        "properties": {
+          "nc_id": { "type": "integer" },
+          "nc_empresa_id": { "type": "integer" },
+          "nc_descripcion": { "type": "string" },
+          "nc_estado": { "type": "string" },
+          "nc_fecha_deteccion": { "type": "string", "format": "date" }
+        }
+      },
+      "Proveedor": {
+        "type": "object",
+        "properties": {
+          "prov_id": { "type": "integer" },
+          "prov_nombre": { "type": "string" },
+          "prov_tipo": { "type": "string" },
+          "prov_calificacion": { "type": "number" },
+          "prov_estado": { "type": "string" }
+        }
+      },
+      "Ticket": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "asunto": { "type": "string" },
+          "estado": { "type": "string", "enum": ["ABIERTO", "EN_PROGRESO", "RESUELTO", "CERRADO", "ESCALADO_N2", "ESCALADO_N3"] },
+          "prioridad": { "type": "string", "enum": ["BAJA", "MEDIA", "ALTA", "CRITICA"] },
+          "modulo_afectado": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Alerta": {
+        "type": "object",
+        "properties": {
+          "tipo": { "type": "string", "enum": ["requisito_legal_sst", "requisito_legal_ambiental", "evaluacion_proveedor", "simulacro", "meta_ambiental"] },
+          "nombre": { "type": "string" },
+          "fecha_limite": { "type": "string", "format": "date" },
+          "dias_restantes": { "type": "integer" },
+          "color": { "type": "string" },
+          "link": { "type": "string" }
+        }
+      },
+      "AuthLogin": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string", "format": "password" }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" }
+        }
+      }
     }
   },
   "paths": {
+    "/api/health": {
+      "get": {
+        "tags": ["Sistema"],
+        "summary": "Health check del sistema",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Estado del sistema",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "status": { "type": "string" }, "app": { "type": "string" }, "version": { "type": "string" }, "db_tables": { "type": "integer" }, "timestamp": { "type": "string" } } } } }
+          }
+        }
+      }
+    },
+    "/api/error/report": {
+      "post": {
+        "tags": ["Sistema"],
+        "summary": "Reportar error JS del frontend",
+        "security": [],
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "message": { "type": "string" }, "source": { "type": "string" }, "lineno": { "type": "integer" }, "url": { "type": "string" }, "userAgent": { "type": "string" } } } } }
+        },
+        "responses": { "200": { "description": "Error registrado" } }
+      }
+    },
     "/api/auth/login": {
       "post": {
         "tags": ["Auth"],
-        "summary": "Iniciar sesión",
-        "requestBody": {"content": {"application/json": {"schema": {"type": "object", "properties": {"email": {"type": "string"}, "password": {"type": "string"}}}}}},
-        "responses": {"200": {"description": "Token JWT"}, "401": {"description": "Credenciales inválidas"}}
+        "summary": "Iniciar sesión y obtener token JWT",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthLogin" } } }
+        },
+        "responses": {
+          "200": { "description": "Token JWT y datos de usuario" },
+          "401": { "description": "Credenciales inválidas" }
+        }
       }
     },
     "/api/planes": {
-      "get": {"tags": ["Planeación"], "summary": "Listar planes estratégicos", "responses": {"200": {"description": "Lista de planes"}}},
-      "post": {"tags": ["Planeación"], "summary": "Crear plan estratégico", "responses": {"201": {"description": "Plan creado"}}}
+      "get": {
+        "tags": ["Planeación"],
+        "summary": "Listar planes estratégicos",
+        "parameters": [
+          { "name": "empresa_id", "in": "query", "schema": { "type": "integer" } },
+          { "name": "estado", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Lista de planes", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Plan" } } } } } }
+      },
+      "post": {
+        "tags": ["Planeación"],
+        "summary": "Crear plan estratégico",
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "plan_empresa_id": { "type": "integer" }, "plan_metodologia_id": { "type": "integer" }, "plan_nombre": { "type": "string" }, "plan_periodo": { "type": "string" } } } } }
+        },
+        "responses": { "201": { "description": "Plan creado" } }
+      }
     },
     "/api/planes/{id}": {
-      "get": {"tags": ["Planeación"], "summary": "Detalle de plan", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}], "responses": {"200": {"description": "Detalle del plan"}}}
+      "get": {
+        "tags": ["Planeación"],
+        "summary": "Detalle de plan estratégico",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Detalle del plan", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Plan" } } } } }
+      }
     },
     "/api/indicadores": {
-      "get": {"tags": ["Indicadores"], "summary": "Listar indicadores KPIs", "responses": {"200": {"description": "Lista de indicadores"}}},
-      "post": {"tags": ["Indicadores"], "summary": "Crear indicador", "responses": {"201": {"description": "Indicador creado"}}}
+      "get": {
+        "tags": ["Indicadores"],
+        "summary": "Listar indicadores KPIs",
+        "parameters": [
+          { "name": "empresa_id", "in": "query", "schema": { "type": "integer" } },
+          { "name": "plan_id", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": { "200": { "description": "Lista de indicadores", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Indicador" } } } } } }
+      },
+      "post": {
+        "tags": ["Indicadores"],
+        "summary": "Crear indicador KPI",
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "indicador_nombre": { "type": "string" }, "indicador_objetivo_id": { "type": "integer" }, "indicador_formula": { "type": "string" }, "indicador_unidad_medida": { "type": "string" } } } } }
+        },
+        "responses": { "201": { "description": "Indicador creado" } }
+      }
+    },
+    "/api/indicadores/sst": {
+      "get": {
+        "tags": ["SST"],
+        "summary": "Indicadores de Seguridad y Salud en el Trabajo",
+        "parameters": [{ "name": "empresa_id", "in": "query", "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Lista de indicadores SST" } }
+      }
+    },
+    "/api/indicadores/ambiental": {
+      "get": {
+        "tags": ["Ambiental"],
+        "summary": "Indicadores de gestión ambiental",
+        "parameters": [{ "name": "empresa_id", "in": "query", "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Lista de indicadores ambientales" } }
+      }
     },
     "/api/mediciones": {
-      "get": {"tags": ["Mediciones"], "summary": "Listar mediciones", "responses": {"200": {"description": "Lista de mediciones"}}},
-      "post": {"tags": ["Mediciones"], "summary": "Registrar medición", "responses": {"201": {"description": "Medición registrada"}}}
+      "get": {
+        "tags": ["Mediciones"],
+        "summary": "Listar mediciones de indicadores",
+        "parameters": [
+          { "name": "empresa_id", "in": "query", "schema": { "type": "integer" } },
+          { "name": "indicador_id", "in": "query", "schema": { "type": "integer" } },
+          { "name": "anio", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": { "200": { "description": "Lista de mediciones", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Medicion" } } } } } }
+      },
+      "post": {
+        "tags": ["Mediciones"],
+        "summary": "Registrar medición de indicador",
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "medicion_indicador_id": { "type": "integer" }, "medicion_meta_id": { "type": "integer" }, "medicion_valor": { "type": "number" }, "medicion_fecha": { "type": "string" } } } } }
+        },
+        "responses": { "201": { "description": "Medición registrada" } }
+      }
     },
     "/api/procesos": {
-      "get": {"tags": ["Procesos"], "summary": "Listar procesos", "responses": {"200": {"description": "Mapa de procesos"}}},
-      "post": {"tags": ["Procesos"], "summary": "Crear proceso", "responses": {"201": {"description": "Proceso creado"}}}
+      "get": {
+        "tags": ["Procesos"],
+        "summary": "Listar procesos y macroprocesos",
+        "parameters": [{ "name": "empresa_id", "in": "query", "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Mapa de procesos" } }
+      },
+      "post": {
+        "tags": ["Procesos"],
+        "summary": "Crear proceso",
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "proceso_nombre": { "type": "string" }, "proceso_macro_id": { "type": "integer" } } } } }
+        },
+        "responses": { "201": { "description": "Proceso creado" } }
+      }
     },
     "/api/documentos": {
-      "get": {"tags": ["Documentos"], "summary": "Listar documentos ISO", "responses": {"200": {"description": "Lista de documentos"}}},
-      "post": {"tags": ["Documentos"], "summary": "Crear documento", "responses": {"201": {"description": "Documento creado"}}}
+      "get": {
+        "tags": ["Documentos"],
+        "summary": "Listar documentos ISO",
+        "parameters": [
+          { "name": "empresa_id", "in": "query", "schema": { "type": "integer" } },
+          { "name": "tipo", "in": "query", "schema": { "type": "string" } },
+          { "name": "estado", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Lista de documentos", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Documento" } } } } } }
+      },
+      "post": {
+        "tags": ["Documentos"],
+        "summary": "Crear documento",
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "documento_titulo": { "type": "string" }, "documento_tipo": { "type": "string" }, "documento_codigo": { "type": "string" }, "documento_contenido_html": { "type": "string" } } } } }
+        },
+        "responses": { "201": { "description": "Documento creado" } }
+      }
     },
     "/api/evaluaciones/{usuario_id}": {
-      "get": {"tags": ["Evaluación"], "summary": "Evaluación de desempeño", "parameters": [{"name": "usuario_id", "in": "path", "required": true, "schema": {"type": "integer"}}], "responses": {"200": {"description": "Evaluación del colaborador"}}}
+      "get": {
+        "tags": ["Evaluación"],
+        "summary": "Evaluación de desempeño de un colaborador",
+        "parameters": [{ "name": "usuario_id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Datos de evaluación del colaborador" } }
+      }
     },
     "/api/nc": {
-      "get": {"tags": ["Calidad"], "summary": "Listar No Conformidades", "responses": {"200": {"description": "Lista de NCs"}}},
-      "post": {"tags": ["Calidad"], "summary": "Registrar NC", "responses": {"201": {"description": "NC registrada"}}}
+      "get": {
+        "tags": ["Calidad"],
+        "summary": "Listar No Conformidades",
+        "parameters": [{ "name": "empresa_id", "in": "query", "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Lista de NCs", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/NC" } } } } } }
+      },
+      "post": {
+        "tags": ["Calidad"],
+        "summary": "Registrar No Conformidad",
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "nc_descripcion": { "type": "string" }, "nc_fecha_deteccion": { "type": "string" }, "nc_empresa_id": { "type": "integer" } } } } }
+        },
+        "responses": { "201": { "description": "NC registrada" } }
+      }
     },
     "/api/dashboard/ejecutivo": {
-      "get": {"tags": ["Dashboard"], "summary": "Dashboard ejecutivo", "responses": {"200": {"description": "Resumen ejecutivo"}}}
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Dashboard ejecutivo con resumen de KPIs",
+        "parameters": [{ "name": "empresa_id", "in": "query", "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Resumen ejecutivo con KPIs consolidados" } }
+      }
     },
     "/api/crm/sincronizar": {
-      "post": {"tags": ["Integraciones"], "summary": "Sincronizar datos desde CRM", "responses": {"200": {"description": "Resultados de sincronización"}}}
+      "post": {
+        "tags": ["Integraciones"],
+        "summary": "Sincronizar datos desde CRM externo",
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "conexion_id": { "type": "integer" }, "tipo": { "type": "string" } } } } }
+        },
+        "responses": { "200": { "description": "Resultados de sincronización" } }
+      }
+    },
+    "/api/peligros": {
+      "get": {
+        "tags": ["SST"],
+        "summary": "Listar peligros SST identificados",
+        "parameters": [{ "name": "empresa_id", "in": "query", "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Lista de peligros" } }
+      }
+    },
+    "/api/peligros/{id}": {
+      "get": {
+        "tags": ["SST"],
+        "summary": "Detalle de peligro SST",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Detalle de peligro" } }
+      }
+    },
+    "/api/incidentes": {
+      "get": {
+        "tags": ["SST"],
+        "summary": "Listar incidentes SST",
+        "parameters": [
+          { "name": "empresa_id", "in": "query", "schema": { "type": "integer" } },
+          { "name": "anio", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": { "200": { "description": "Lista de incidentes" } }
+      }
+    },
+    "/api/proveedores": {
+      "get": {
+        "tags": ["Proveedores"],
+        "summary": "Listar proveedores y evaluaciones",
+        "parameters": [{ "name": "empresa_id", "in": "query", "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Lista de proveedores", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Proveedor" } } } } } }
+      }
+    },
+    "/api/registros/ambiental": {
+      "get": {
+        "tags": ["Ambiental"],
+        "summary": "Listar registros de gestión ambiental",
+        "parameters": [
+          { "name": "empresa_id", "in": "query", "schema": { "type": "integer" } },
+          { "name": "anio", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": { "200": { "description": "Lista de registros ambientales" } }
+      }
+    },
+    "/api/tickets": {
+      "get": {
+        "tags": ["Soporte"],
+        "summary": "Listar tickets de soporte con filtros",
+        "parameters": [
+          { "name": "estado", "in": "query", "schema": { "type": "string" } },
+          { "name": "prioridad", "in": "query", "schema": { "type": "string" } },
+          { "name": "modulo", "in": "query", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } }
+        ],
+        "responses": { "200": { "description": "Lista paginada de tickets", "content": { "application/json": { "schema": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Ticket" } }, "total": { "type": "integer" }, "page": { "type": "integer" }, "pages": { "type": "integer" } } } } } } }
+      }
+    },
+    "/api/tickets/resumen": {
+      "get": {
+        "tags": ["Soporte"],
+        "summary": "Resumen de tickets (dashboard soporte)",
+        "responses": { "200": { "description": "Resumen con abiertos, en progreso, resueltos mes, SLA cumplimiento, críticos" } }
+      }
+    },
+    "/api/backup/log": {
+      "get": {
+        "tags": ["Sistema"],
+        "summary": "Historial de backups recientes",
+        "parameters": [{ "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } }],
+        "responses": { "200": { "description": "Historial de ejecuciones de backup" } }
+      },
+      "post": {
+        "tags": ["Sistema"],
+        "summary": "Registrar ejecución de backup",
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "tipo": { "type": "string" }, "archivo": { "type": "string" }, "tamano_bytes": { "type": "integer" }, "sha256": { "type": "string" }, "estado": { "type": "string" }, "ejecutado_por": { "type": "string" } } } } }
+        },
+        "responses": { "200": { "description": "Log de backup registrado" } }
+      }
+    },
+    "/api/backup/ultimo": {
+      "get": {
+        "tags": ["Sistema"],
+        "summary": "Último backup registrado",
+        "responses": { "200": { "description": "Último registro de backup" } }
+      }
+    },
+    "/api/backup/ejecutar": {
+      "post": {
+        "tags": ["Sistema"],
+        "summary": "Ejecutar backup manual (solo SUPER_ADMIN)",
+        "responses": { "200": { "description": "Resultado de la ejecución del backup" }, "403": { "description": "No autorizado" } }
+      }
+    },
+    "/api/demo/crear": {
+      "post": {
+        "tags": ["Sistema"],
+        "summary": "Crear empresa demo (trial 15 días)",
+        "security": [],
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "nombre_empresa": { "type": "string" }, "email": { "type": "string" }, "nit": { "type": "string" } } } } }
+        },
+        "responses": { "201": { "description": "Empresa demo creada con credenciales" }, "500": { "description": "Error al crear demo" } }
+      }
+    },
+    "/api/alertas/vencimientos": {
+      "get": {
+        "tags": ["Alertas"],
+        "summary": "Alertas proactivas de vencimientos en todos los módulos",
+        "description": "Revisa requisitos legales próximos a vencer, evaluaciones de proveedores pendientes, simulacros programados y metas ambientales con avance bajo.",
+        "parameters": [
+          { "name": "empresa_id", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de alertas agrupadas por categoría",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "total": { "type": "integer" }, "alertas": { "type": "array", "items": { "$ref": "#/components/schemas/Alerta" } }, "resumen": { "type": "object", "properties": { "requisitos_legales_sst": { "type": "integer" }, "requisitos_legales_ambiental": { "type": "integer" }, "evaluaciones_proveedores": { "type": "integer" }, "simulacros": { "type": "integer" }, "metas_ambientales_bajo_avance": { "type": "integer" } } } } } } }
+          },
+          "401": { "description": "No autorizado" }
+        }
+      }
+    },
+    "/api/powerbi": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Exportar datos KPIs para Power BI o analítica externa",
+        "parameters": [
+          { "name": "plan_id", "in": "query", "schema": { "type": "integer" } },
+          { "name": "format", "in": "query", "schema": { "type": "string", "enum": ["json", "csv"] } }
+        ],
+        "responses": { "200": { "description": "Datos estructurados (Perspectiva, Objetivo, Indicador, Fórmula, Unidad, Meta, Frecuencia)" } }
+      }
+    },
+    "/ambiental/api/huella": {
+      "get": {
+        "tags": ["Ambiental"],
+        "summary": "API JSON: Huella de carbono por alcance",
+        "parameters": [{ "name": "empresa_id", "in": "query", "schema": { "type": "integer" } }, { "name": "anio", "in": "query", "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Datos de huella de carbono" } }
+      }
+    },
+    "/ambiental/api/indicadores-carbono": {
+      "get": {
+        "tags": ["Ambiental"],
+        "summary": "API JSON: Indicadores de carbono",
+        "parameters": [{ "name": "empresa_id", "in": "query", "schema": { "type": "integer" } }, { "name": "anio", "in": "query", "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Indicadores de carbono" } }
+      }
+    },
+    "/ambiental/api/dashboard": {
+      "get": {
+        "tags": ["Ambiental"],
+        "summary": "API JSON: Dashboard ambiental completo",
+        "parameters": [{ "name": "empresa_id", "in": "query", "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Datos del dashboard ambiental" } }
+      }
+    },
+    "/sse/dashboard": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "SSE Dashboard en tiempo real (Server-Sent Events)",
+        "responses": { "200": { "description": "Stream de eventos SSE" } }
+      }
     }
   }
 }

@@ -43,4 +43,28 @@ class DashboardController {
 
         require BASE_PATH . '/templates/layout.php';
     }
+
+    public function tableros(): void {
+        $pm = new PlanManager();
+        $empresaId = (int)($_GET['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 0));
+        if (!$empresaId) {
+            $empresas = $pm->getEmpresas();
+            $empresaId = !empty($empresas) ? (int)$empresas[0]['empresa_id'] : 1;
+        }
+
+        $tableros = $this->safeAll(
+            "SELECT t.*,
+                    (SELECT COUNT(*) FROM dash_widgets w WHERE w.widget_tablero_id = t.tablero_id AND w.widget_activo = 1) as total_widgets
+             FROM dash_tableros t
+             WHERE (t.tablero_empresa_id = ? OR t.tablero_es_plantilla = 1) AND t.tablero_activo = 1
+             ORDER BY t.tablero_tipo, t.tablero_nombre",
+            [$empresaId]
+        );
+
+        $pageTitle = 'Dashboards';
+        ob_start();
+        require BASE_PATH . '/templates/dashboards.php';
+        $content = ob_get_clean();
+        require BASE_PATH . '/templates/layout.php';
+    }
 }
