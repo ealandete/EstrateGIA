@@ -301,7 +301,9 @@ $router->post('/financiero/eliminar', function () { require_once BASE_PATH.'/lib
 
 // ===== EXPORT PDF =====
 $router->get('/planeacion/{id}/pdf', function ($id) {
-    $html = file_get_contents('http://localhost:81/planeacion/'.$id.'/reporte?print=1');
+    $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost:81';
+    $html = file_get_contents("$proto://$host/planeacion/$id/reporte?print=1");
     $tmp = tempnam(sys_get_temp_dir(), 'report_').'.html';
     file_put_contents($tmp, $html);
     $pdf = str_replace('.html','.pdf',$tmp);

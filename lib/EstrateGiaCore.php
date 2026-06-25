@@ -26,7 +26,7 @@ class EstrateGiaCore {
             'jwt_expire'  => 28800,
             'encrypt_key' => '3str4t3G1A_AES_256_C0R3',
             'app_name'    => 'EstrateGIA',
-            'app_version' => '1.0.0',
+            'app_version' => '2.1.0',
             'api_base_url'=> '/api',
             'upload_dir'  => __DIR__ . '/../uploads/',
             'log_dir'     => __DIR__ . '/../logs/',

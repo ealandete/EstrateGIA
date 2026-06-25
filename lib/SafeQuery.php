@@ -201,4 +201,34 @@ trait SafeQuery
     {
         return $this->safeCount($table, $where, $whereParams) > 0;
     }
+
+    /**
+     * Paginación segura con prepared statements
+     *
+     * @param string $sql Consulta SELECT (sin LIMIT)
+     * @param array $params Parámetros para placeholders
+     * @param int $page Número de página (1-based)
+     * @param int $perPage Registros por página (default 20, max 100)
+     * @return array ['data' => rows, 'total' => int, 'page' => int, 'pages' => int, 'perPage' => int]
+     */
+    protected function safePaginate(string $sql, array $params = [], int $page = 1, int $perPage = 20): array
+    {
+        $page = max(1, $page);
+        $perPage = min(100, max(1, $perPage));
+
+        $countSql = preg_replace('/SELECT\s+.*?\s+FROM\s+/is', 'SELECT COUNT(*) FROM ', $sql, 1);
+        $countSql = preg_replace('/\s+ORDER BY.*$/is', '', $countSql);
+        $total = (int)$this->safe($countSql, $params);
+
+        $offset = ($page - 1) * $perPage;
+        $data = $this->safeAll("$sql LIMIT $perPage OFFSET $offset", $params);
+
+        return [
+            'data' => $data,
+            'total' => $total,
+            'page' => $page,
+            'pages' => (int)ceil($total / $perPage),
+            'perPage' => $perPage,
+        ];
+    }
 }

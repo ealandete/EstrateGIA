@@ -24,7 +24,7 @@ class Router {
         $method = strtoupper($method);
 
         // Rate limiting global para todas las rutas
-        if (session_status() === PHP_SESSION_NONE) session_start();
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) session_start();
         $limiter = RateLimiter::getInstance();
         if (!$limiter->check()) {
             http_response_code(429);

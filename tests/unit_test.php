@@ -191,6 +191,106 @@ check('getInspecciones', function() use ($sm) { ok(is_array($sm->getInspecciones
 check('getEmergencias', function() use ($sm) { ok(is_array($sm->getEmergencias(2))); });
 check('getUsuarios', function() use ($sm) { ok(is_array($sm->getUsuarios(2))); });
 
+// ============================================================
+// EXTENDED TESTS: PlanManager & IndicatorManager
+// ============================================================
+$empresaId = 2;
+$testPlanId = null;
+$testEmpresaId = null;
+$testObjetivoId = null;
+$testEstrategiaId = null;
+$testActividadId = null;
+$testPresupuestoId = null;
+$testAnalisisFodaId = null;
+$testAnalisisPestelId = null;
+$testIndicadorId = null;
+$testMetaId = null;
+
+$testPlanId = $pm->createPlan([
+    'plan_empresa_id' => $empresaId,
+    'plan_metodologia_id' => 1,
+    'plan_nombre' => 'UT Plan ' . time(),
+    'plan_descripcion' => 'Plan de prueba unitaria extendida',
+    'plan_periodo' => '2026',
+    'plan_estado' => 'borrador',
+    'plan_responsable_id' => 1
+]);
+
+echo "\n📋 PlanManager (extended)\n";
+
+check('PM getMetodologias activas', function() use ($pm) { $r=$pm->getMetodologias(); ok(is_array($r)); gt(count($r),0); });
+check('PM getMetodologias todas', function() use ($pm) { $a=$pm->getMetodologias(); $t=$pm->getMetodologias(false); ok(is_array($t)); ok(count($t)>=count($a)); });
+check('PM getMetodologia(1)', function() use ($pm) { $m=$pm->getMetodologia(1); ok(is_array($m)); ok(isset($m['metodologia_nombre'])); });
+check('PM getMetodologia null', function() use ($pm) { $m=$pm->getMetodologia(99999); ok($m===null||$m===false); });
+check('PM validateRequired 0 errors', function() use ($core) { $e=$core->validateRequired(['x'=>1,'y'=>2],['x','y']); eq(0,count($e)); });
+check('PM validateRequired 2 missing', function() use ($core) { $e=$core->validateRequired(['x'=>1],['x','y','z']); eq(2,count($e)); });
+check('PM validateRequired empty', function() use ($core) { $e=$core->validateRequired([],[]); eq(0,count($e)); });
+check('PM getEmpresas', function() use ($pm, $empresaId) { $r=$pm->getEmpresas(); ok(is_array($r)); $f=false;foreach($r as $e)if($e['empresa_id']==$empresaId)$f=true;ok($f); });
+check('PM getEmpresa(2)', function() use ($pm, $empresaId) { $e=$pm->getEmpresa($empresaId); ok(is_array($e)); ok(isset($e['empresa_nombre'])); });
+check('PM getEmpresa null', function() use ($pm) { $e=$pm->getEmpresa(99999); ok($e===null||$e===false); });
+check('PM createEmpresa', function() use ($pm, $core, &$testEmpresaId) { $ts=time(); $testEmpresaId=$pm->createEmpresa(['empresa_nombre'=>'UT Empresa '.$ts,'empresa_razon_social'=>'UT RS '.$ts,'empresa_nit'=>'900'.$ts,'empresa_sector_id'=>1,'empresa_direccion'=>'Calle UT 123','empresa_telefono'=>'3001234567','empresa_email'=>'ut'.$ts.'@test.com']); gt($testEmpresaId,0); $e=$core->fetchOne("SELECT empresa_nombre FROM plan_empresas WHERE empresa_id=:id",['id'=>$testEmpresaId]); ok(strpos($e['empresa_nombre']??'','UT Empresa')!==false); });
+check('PM createPlan missing fields', function() use ($pm) { try{$pm->createPlan(['plan_empresa_id'=>2]);throw new \AssertionError('Should have thrown');}catch(\InvalidArgumentException $e){ok(true);} });
+check('PM testPlanId valid', function() use ($testPlanId) { gt($testPlanId,0); });
+check('PM getPlan', function() use ($pm, $testPlanId) { $p=$pm->getPlan($testPlanId); ok(is_array($p)); ok(!empty($p['plan_nombre'])); });
+check('PM getPlan null', function() use ($pm) { $p=$pm->getPlan(99999); ok($p===null||$p===false); });
+check('PM getPlanes by empresa', function() use ($pm, $empresaId) { $r=$pm->getPlanes($empresaId); ok(is_array($r)); });
+check('PM getPlanes by estado', function() use ($pm) { $r=$pm->getPlanes(null,'borrador'); ok(is_array($r)); });
+check('PM updatePlan nombre', function() use ($pm, $testPlanId) { $ts=time(); $r=$pm->updatePlan($testPlanId,['plan_nombre'=>'UT Updated '.$ts]); ok($r); $p=$pm->getPlan($testPlanId); ok(strpos($p['plan_nombre']??'','UT Updated')!==false); });
+check('PM getFases', function() use ($pm, $testPlanId) { $r=$pm->getFases($testPlanId); ok(is_array($r)); });
+check('PM getFase', function() use ($pm, $testPlanId) { $fases=$pm->getFases($testPlanId); if(empty($fases)){ok(true);return;} $f=$pm->getFase($fases[0]['fase_id']); ok(is_array($f)); ok(isset($f['fase_nombre'])); });
+check('PM updateFase estado', function() use ($pm, $testPlanId) { $fases=$pm->getFases($testPlanId); if(empty($fases)){ok(true);return;} $r=$pm->updateFase($fases[0]['fase_id'],['fase_estado'=>'completada']); ok($r===true); });
+check('PM getFasePasoAPaso', function() use ($pm, $testPlanId) { $fases=$pm->getFases($testPlanId); if(empty($fases)){ok(true);return;} $r=$pm->getFasePasoAPaso($fases[0]['fase_id']); ok(is_array($r)); });
+check('PM getPlanTree', function() use ($pm, $testPlanId) { $r=$pm->getPlanTree($testPlanId); ok(is_array($r)); });
+check('PM getPlanProgress', function() use ($pm, $testPlanId) { $r=$pm->getPlanProgress($testPlanId); ok(is_array($r)); });
+check('PM getFODA empty', function() use ($pm, $testPlanId) { $r=$pm->getFODA($testPlanId); ok($r===null||is_array($r)); });
+check('PM getPESTEL empty', function() use ($pm, $testPlanId) { $r=$pm->getPESTEL($testPlanId); ok($r===null||is_array($r)); });
+check('PM createAnalisis FODA', function() use ($pm, $testPlanId, &$testAnalisisFodaId) { $testAnalisisFodaId=$pm->createAnalisis(['analisis_plan_id'=>$testPlanId,'analisis_tipo'=>'FODA','analisis_titulo'=>'FODA UT '.time(),'analisis_contenido'=>['fortalezas'=>'Test','oportunidades'=>'Test','debilidades'=>'Test','amenazas'=>'Test'],'analisis_conclusiones'=>'Test conclusion','analisis_fecha'=>date('Y-m-d')]); gt($testAnalisisFodaId,0); });
+check('PM createAnalisis PESTEL', function() use ($pm, $testPlanId, &$testAnalisisPestelId) { $testAnalisisPestelId=$pm->createAnalisis(['analisis_plan_id'=>$testPlanId,'analisis_tipo'=>'PESTEL','analisis_titulo'=>'PESTEL UT '.time(),'analisis_contenido'=>['politicos'=>'Test','economicos'=>'Test','sociales'=>'Test','tecnologicos'=>'Test','ecologicos'=>'Test','legales'=>'Test'],'analisis_conclusiones'=>'Test conclusion','analisis_fecha'=>date('Y-m-d')]); gt($testAnalisisPestelId,0); });
+check('PM getFODA after create', function() use ($pm, $testPlanId) { $r=$pm->getFODA($testPlanId); ok(is_array($r)); eq('FODA',$r['analisis_tipo']); });
+check('PM getPESTEL after create', function() use ($pm, $testPlanId) { $r=$pm->getPESTEL($testPlanId); ok(is_array($r)); eq('PESTEL',$r['analisis_tipo']); });
+check('PM getAnalisisByPlan all', function() use ($pm, $testPlanId) { $r=$pm->getAnalisisByPlan($testPlanId); ok(is_array($r)); ok(count($r)>=2); });
+check('PM getAnalisisByPlan filtered', function() use ($pm, $testPlanId) { $r=$pm->getAnalisisByPlan($testPlanId,'FODA'); ok(is_array($r)); ok(count($r)>=1); });
+check('PM createPresupuesto', function() use ($pm, $testPlanId, &$testPresupuestoId) { $testPresupuestoId=$pm->createPresupuesto(['presupuesto_plan_id'=>$testPlanId,'presupuesto_categoria'=>'UT Categoria','presupuesto_monto_planeado'=>10000,'presupuesto_periodo'=>'2026-Q1']); gt($testPresupuestoId,0); });
+check('PM getPresupuestosByPlan', function() use ($pm, $testPlanId) { $r=$pm->getPresupuestosByPlan($testPlanId); ok(is_array($r)); ok(count($r)>=1); });
+check('PM updatePresupuestoEjecucion', function() use ($pm, &$testPresupuestoId) { if(!$testPresupuestoId){ok(true);return;} $r=$pm->updatePresupuestoEjecucion($testPresupuestoId,5000); ok($r===true); });
+check('PM getCargaTrabajoColaboradores', function() use ($pm) { $r=$pm->getCargaTrabajoColaboradores(5); ok(is_array($r)); });
+check('PM createObjetivo plan5', function() use ($pm, &$testObjetivoId) { $testObjetivoId=$pm->createObjetivo(['objetivo_plan_id'=>5,'objetivo_nombre'=>'UT Objetivo '.time(),'objetivo_perspectiva'=>'financiera','objetivo_tipo'=>'estrategico','objetivo_prioridad'=>'alto']); gt($testObjetivoId,0); });
+check('PM updateObjetivo', function() use ($pm, &$testObjetivoId) { if(!$testObjetivoId){ok(true);return;} $ts=time(); $r=$pm->updateObjetivo($testObjetivoId,['objetivo_nombre'=>'UT Updated '.$ts,'objetivo_prioridad'=>'critico']); ok($r===true); });
+check('PM createEstrategia', function() use ($pm, &$testObjetivoId, &$testEstrategiaId) { if(!$testObjetivoId)throw new \AssertionError('No objetivo'); $testEstrategiaId=$pm->createEstrategia(['estrategia_objetivo_id'=>$testObjetivoId,'estrategia_nombre'=>'UT Estrategia '.time(),'estrategia_tipo'=>'crecimiento','estrategia_prioridad'=>'alto']); gt($testEstrategiaId,0); });
+check('PM updateEstrategia', function() use ($pm, &$testEstrategiaId) { if(!$testEstrategiaId){ok(true);return;} $r=$pm->updateEstrategia($testEstrategiaId,['estrategia_nombre'=>'UT Estrategia Updated '.time(),'estrategia_estado'=>'en_proceso']); ok($r===true); });
+check('PM getActividades', function() use ($pm) { $r=$pm->getActividades(null,null,null,'pendiente'); ok(is_array($r)); });
+check('PM createActividad', function() use ($pm, &$testObjetivoId, &$testActividadId) { if(!$testObjetivoId)throw new \AssertionError('No objetivo'); $testActividadId=$pm->createActividad(['actividad_nombre'=>'UT Actividad '.time(),'actividad_objetivo_id'=>$testObjetivoId,'actividad_tipo'=>'tarea','actividad_prioridad'=>'medio']); gt($testActividadId,0); });
+check('PM updateActividad', function() use ($pm, &$testActividadId) { if(!$testActividadId){ok(true);return;} $r=$pm->updateActividad($testActividadId,['actividad_nombre'=>'UT Actividad '.time(),'actividad_estado'=>'completada','actividad_avance_porcentaje'=>100]); ok($r===true); });
+check('PM deleteActividad', function() use ($pm, &$testActividadId) { if(!$testActividadId){ok(true);return;} $r=$pm->deleteActividad($testActividadId); ok($r===true); });
+check('PM deleteEstrategia', function() use ($pm, &$testEstrategiaId) { if(!$testEstrategiaId){ok(true);return;} $r=$pm->deleteEstrategia($testEstrategiaId); ok($r===true); });
+check('PM deleteObjetivo', function() use ($pm, &$testObjetivoId) { if(!$testObjetivoId){ok(true);return;} $r=$pm->deleteObjetivo($testObjetivoId); ok($r===true); });
+check('PM deleteEmpresa cleanup', function() use ($core, &$testEmpresaId) { if(!$testEmpresaId){ok(true);return;} $r=$core->delete('plan_empresas','empresa_id=:id',['id'=>$testEmpresaId]); ok($r>0); });
+check('PM deletePlan cleanup', function() use ($core, &$testPlanId, &$testAnalisisFodaId, &$testAnalisisPestelId, &$testPresupuestoId) { if(!$testPlanId)throw new \AssertionError('No plan to delete'); if($testAnalisisFodaId)$core->delete('plan_analisis_contexto','analisis_id=:id',['id'=>$testAnalisisFodaId]); if($testAnalisisPestelId)$core->delete('plan_analisis_contexto','analisis_id=:id',['id'=>$testAnalisisPestelId]); $core->delete('plan_presupuestos','presupuesto_plan_id=:pid',['pid'=>$testPlanId]); $core->delete('plan_fases','fase_plan_id=:pid',['pid'=>$testPlanId]); $r=$core->delete('plan_planes_estrategicos','plan_id=:pid',['pid'=>$testPlanId]); ok($r>0); });
+
+echo "\n📈 IndicatorManager (extended)\n";
+
+check('IM getCategorias all', function() use ($im) { $r=$im->getCategorias(); ok(is_array($r)); ok(count($r)>=4); });
+check('IM getCategorias filtered', function() use ($im) { $r=$im->getCategorias('cumplimiento'); ok(is_array($r)); ok(count($r)>=1); });
+check('IM getCategoria(1)', function() use ($im) { $c=$im->getCategoria(1); ok(is_array($c)); ok(isset($c['categoria_nombre'])); });
+check('IM getIndicadores by plan', function() use ($im) { $r=$im->getIndicadores(5); ok(is_array($r)); gt(count($r),0); });
+check('IM getIndicadores by tipo', function() use ($im) { $r=$im->getIndicadores(null,null,'cumplimiento'); ok(is_array($r)); });
+check('IM getIndicadores by proceso', function() use ($im) { $r=$im->getIndicadores(null,1); ok(is_array($r)); });
+check('IM getIndicador single', function() use ($im) { $all=$im->getIndicadores(5); $i=$im->getIndicador($all[0]['indicador_id']); ok(is_array($i)); ok(isset($i['indicador_nombre'])); });
+check('IM createIndicador', function() use ($im, &$testIndicadorId) { $testIndicadorId=$im->createIndicador(['indicador_categoria_id'=>1,'indicador_plan_id'=>5,'indicador_nombre'=>'UT Indicador '.time(),'indicador_descripcion'=>'Test unitario','indicador_frecuencia_medicion'=>'mensual','indicador_tendencia_esperada'=>'ascendente','indicador_rango_minimo'=>0,'indicador_rango_maximo'=>100]); gt($testIndicadorId,0); });
+check('IM updateIndicador', function() use ($im, &$testIndicadorId) { if(!$testIndicadorId){ok(true);return;} $ts=time(); $r=$im->updateIndicador($testIndicadorId,['indicador_nombre'=>'UT Updated '.$ts,'indicador_frecuencia_medicion'=>'quincenal']); ok($r===true); });
+check('IM getResumen4Variantes', function() use ($im) { $r=$im->getResumen4Variantes(5); ok(is_array($r)); ok(count($r)<=4); });
+check('IM getMediciones', function() use ($im) { $all=$im->getIndicadores(5); $r=$im->getMediciones($all[0]['indicador_id'],null,null,10); ok(is_array($r)); });
+check('IM createMedicion', function() use ($im, &$testIndicadorId) { if(!$testIndicadorId)throw new \AssertionError('No indicador'); $id=$im->createMedicion(['medicion_indicador_id'=>$testIndicadorId,'medicion_periodo'=>'2026-06','medicion_valor'=>85,'medicion_semaforo'=>'verde','medicion_cumplimiento_porcentaje'=>85]); gt($id,0); });
+check('IM registrarMedicion', function() use ($im, &$testIndicadorId) { if(!$testIndicadorId)throw new \AssertionError('No indicador'); $id=$im->registrarMedicion(['medicion_indicador_id'=>$testIndicadorId,'medicion_valor'=>92,'medicion_fecha'=>date('Y-m-d'),'medicion_periodo'=>'2026-07','medicion_origen'=>'manual','medicion_observaciones'=>'Registro UT']); gt($id,0); });
+check('IM registrarMedicionDesdeCRM', function() use ($im, &$testIndicadorId) { if(!$testIndicadorId)throw new \AssertionError('No indicador'); $id=$im->registrarMedicionDesdeCRM(['medicion_indicador_id'=>$testIndicadorId,'medicion_valor'=>78,'medicion_fecha'=>date('Y-m-d'),'medicion_periodo'=>'2026-08']); gt($id,0); });
+check('IM createMeta', function() use ($im, &$testIndicadorId, &$testMetaId) { if(!$testIndicadorId)throw new \AssertionError('No indicador'); $testMetaId=$im->createMeta(['meta_indicador_id'=>$testIndicadorId,'meta_periodo'=>'2026-07','meta_valor'=>90,'meta_valor_minimo'=>80,'meta_valor_maximo'=>100,'meta_fecha_inicio'=>'2026-07-01','meta_fecha_fin'=>'2026-07-31','meta_peso_porcentaje'=>25]); gt($testMetaId,0); });
+check('IM getMetas', function() use ($im, &$testIndicadorId) { if(!$testIndicadorId){ok(true);return;} $r=$im->getMetas($testIndicadorId); ok(is_array($r)); });
+check('IM getMeta', function() use ($im, &$testMetaId) { if(!$testMetaId){ok(true);return;} $m=$im->getMeta($testMetaId); ok(is_array($m)); ok(isset($m['meta_valor'])); });
+check('IM getSerieHistorica', function() use ($im) { $all=$im->getIndicadores(5); $r=$im->getSerieHistorica($all[0]['indicador_id'],6); ok(is_array($r)); });
+check('IM getTendencia4Variantes', function() use ($im) { $r=$im->getTendencia4Variantes(5,3); ok(is_array($r)); ok(isset($r['cumplimiento'])); });
+check('IM getSemaforoDashboard', function() use ($im) { $r=$im->getSemaforoDashboard(5); ok(is_array($r)); });
+check('IM deleteIndicador cleanup', function() use ($im, $core, &$testIndicadorId) { if(!$testIndicadorId){ok(true);return;} $core->delete('ind_mediciones','medicion_indicador_id=:id',['id'=>$testIndicadorId]); $core->delete('ind_metas','meta_indicador_id=:id',['id'=>$testIndicadorId]); $r=$im->deleteIndicador($testIndicadorId); ok($r===true); });
+
 echo "\n🔀 Router\n";
 check('Router get', function() { (new Router())->get('/ut',function(){return 'x';}); ok(true); });
 check('Router 404', function() { $r=new Router(); $out=$r->dispatch('GET','/noexiste_ut_'.time()); ok(strpos($out,'404')!==false); });
