@@ -106,6 +106,7 @@ trait SafeQuery
      */
     protected function safeInsert(string $table, array $data): ?int
     {
+        $table = $this->validateTableName($table);
         try {
             $columns = array_keys($data);
             $placeholders = array_fill(0, count($columns), '?');
@@ -138,6 +139,7 @@ trait SafeQuery
      */
     protected function safeUpdate(string $table, array $data, string $where, array $whereParams = []): int
     {
+        $table = $this->validateTableName($table);
         try {
             $set = implode(', ', array_map(fn($col) => "$col = ?", array_keys($data)));
             $sql = "UPDATE $table SET $set WHERE $where";
@@ -163,6 +165,7 @@ trait SafeQuery
      */
     protected function safeDelete(string $table, string $where, array $whereParams = []): int
     {
+        $table = $this->validateTableName($table);
         try {
             $sql = "DELETE FROM $table WHERE $where";
             $stmt = $this->core->getPDO()->prepare($sql);
@@ -185,6 +188,7 @@ trait SafeQuery
      */
     protected function safeCount(string $table, string $where = '1', array $whereParams = []): int
     {
+        $table = $this->validateTableName($table);
         $sql = "SELECT COUNT(*) FROM $table WHERE $where";
         return (int)$this->safe($sql, $whereParams);
     }
@@ -199,7 +203,15 @@ trait SafeQuery
      */
     protected function safeExists(string $table, string $where, array $whereParams = []): bool
     {
+        $table = $this->validateTableName($table);
         return $this->safeCount($table, $where, $whereParams) > 0;
+    }
+
+    private function validateTableName(string $table): string {
+        if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $table)) {
+            throw new \InvalidArgumentException("Nombre de tabla inválido: $table");
+        }
+        return $table;
     }
 
     /**

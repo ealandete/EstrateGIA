@@ -48,7 +48,9 @@ $menuGroups = [
     ],
 ];
 $userRol = (int)($_SESSION['auth_user']['usuario_rol_id'] ?? 0);
-$adminRoles = [1, 9, 10]; // Super Admin, SUPER_ADMIN, ADMIN
+$adminRoles = [1]; // Super Admin (rol_id=1 en sys_roles)
+$stmt = $core->getConnection()->query("SELECT rol_id FROM sys_roles WHERE rol_nombre LIKE '%ADMIN%' AND rol_id > 1");
+if ($stmt) { while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) $adminRoles[] = (int)$row['rol_id']; }
 if (!in_array($userRol, $adminRoles)) unset($menuGroups['🔧 Sistema']);
 ?>
 <?php

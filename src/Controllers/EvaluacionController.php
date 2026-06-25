@@ -86,7 +86,37 @@ class EvaluacionController {
     }
 
     public function guardar(): void {
-        header('Location: /evaluacion?ok=1');
+        $empresaId = (int)($_POST['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $planId = (int)($_POST['plan_id'] ?? 0);
+        $tipo = $_POST['tipo_evaluacion'] ?? 'desempeno';
+        $periodo = $_POST['periodo'] ?? date('Y-m');
+        $evaluadorId = Auth::userId();
+
+        if ($planId < 1) { header('Location: /evaluacion?err=falta_plan'); exit; }
+
+        try {
+            $evaluados = $_POST['evaluados'] ?? [];
+            if (empty($evaluados)) { header('Location: /evaluacion?err=sin_evaluados'); exit; }
+
+            foreach ($evaluados as $userId => $datos) {
+                $puntaje = (float)($datos['puntaje'] ?? 0);
+                $comentario = $datos['comentario'] ?? '';
+                $this->safeInsert('eval_evaluaciones', [
+                    'eval_empresa_id' => $empresaId,
+                    'eval_plan_id' => $planId,
+                    'eval_tipo' => $tipo,
+                    'eval_periodo' => $periodo,
+                    'eval_evaluador_id' => $evaluadorId,
+                    'eval_evaluado_id' => (int)$userId,
+                    'eval_puntaje' => $puntaje,
+                    'eval_comentario' => $comentario,
+                    'eval_fecha' => date('Y-m-d H:i:s'),
+                ]);
+            }
+            header('Location: /evaluacion?ok=1');
+        } catch (\Exception $e) {
+            header('Location: /evaluacion?err=' . urlencode($e->getMessage()));
+        }
         exit;
     }
 

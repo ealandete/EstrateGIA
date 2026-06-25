@@ -155,7 +155,28 @@ class IndicadoresController {
                 }
             }
             $sheetXml = $zip->getFromName('xl/worksheets/sheet1.xml');
-            if (!$sheetXml) { echo json_encode(['success'=>false,'error'=>'Hoja no encontrada']); exit; }
+            if (!$sheetXml) {
+                $workbook = $zip->getFromName('xl/workbook.xml');
+                if ($workbook) {
+                    $wb = new SimpleXMLElement($workbook);
+                    $ns = $wb->getNamespaces(true);
+                    foreach (($wb->sheets->sheet ?? []) as $s) {
+                        $rId = (string)($s->attributes('r', true)['id'] ?? '');
+                        $rels = $zip->getFromName('xl/_rels/workbook.xml.rels');
+                        if ($rels) {
+                            $relsXml = new SimpleXMLElement($rels);
+                            foreach ($relsXml->Relationship as $rel) {
+                                if ((string)$rel['Id'] === $rId) {
+                                    $target = (string)$rel['Target'];
+                                    $sheetXml = $zip->getFromName('xl/' . $target);
+                                    break 2;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (!$sheetXml) { echo json_encode(['success'=>false,'error'=>'No se encontro ninguna hoja en el archivo XLSX']); exit; }
             $sheet = new SimpleXMLElement($sheetXml);
             $rows = [];
             $namespaces = $sheet->getNamespaces(true);

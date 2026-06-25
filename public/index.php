@@ -397,6 +397,13 @@ $router->get('/extras/satisfaccion', function () { require_once BASE_PATH.'/src/
 $router->post('/satisfaccion/crear', function () { require_once BASE_PATH.'/src/Controllers/ExtrasController.php'; (new ExtrasController())->crearSatisfaccion(); });
 $router->get('/crm', function () { require_once BASE_PATH.'/src/Controllers/CRMController.php'; (new CRMController())->index(); });
 $router->post('/crm/conexion/crear', function () { require_once BASE_PATH.'/src/Controllers/IntegracionesController.php'; (new IntegracionesController())->crearConexion(); });
+
+// ===== LICENCIAS =====
+$router->get('/licencias', function () { require_once BASE_PATH.'/src/Controllers/LicenciasController.php'; (new LicenciasController())->index(); });
+$router->get('/licencias/crear', function () { require_once BASE_PATH.'/src/Controllers/LicenciasController.php'; (new LicenciasController())->create(); });
+$router->post('/licencias/crear', function () { require_once BASE_PATH.'/src/Controllers/LicenciasController.php'; (new LicenciasController())->store(); });
+$router->get('/licencias/{id}', function ($id) { require_once BASE_PATH.'/src/Controllers/LicenciasController.php'; (new LicenciasController())->edit((int)$id); });
+$router->post('/licencias/{id}/update', function ($id) { require_once BASE_PATH.'/src/Controllers/LicenciasController.php'; (new LicenciasController())->update((int)$id); });
 $router->post('/crm/mapeo/crear', function () { require_once BASE_PATH.'/src/Controllers/IntegracionesController.php'; (new IntegracionesController())->crearMapeo(); });
 $router->get('/admin', function () { header('Location: /admin/usuarios'); exit; });
 $router->get('/admin/usuarios', function () { require_once BASE_PATH.'/src/Controllers/AdminController.php'; (new AdminController())->usuarios(); });
