@@ -88,10 +88,25 @@ async function firmarDocumento(id) {
         <div class="card-box mb-3">
             <div class="card-box-header"><i class="fas fa-clock-rotate-left me-2"></i>Historial de Versiones</div>
             <div class="card-box-body p-0">
-                <?php if (empty($controlCambios)): ?>
+                <?php $hasHistory = !empty($historial) || !empty($controlCambios); ?>
+                <?php if (!$hasHistory): ?>
                 <div class="p-3 text-muted small text-center">Sin cambios registrados. Esta es la versión inicial.</div>
                 <?php else: ?>
-                <?php foreach (array_reverse($controlCambios) as $cc): ?>
+                <?php if (!empty($historial)): foreach ($historial as $hv): ?>
+                <div class="p-2 px-3 border-bottom small">
+                    <div class="d-flex justify-content-between">
+                        <strong>v<?= htmlspecialchars($hv['historial_version_nueva'] ?? '?') ?></strong>
+                        <small class="text-muted"><?= htmlspecialchars($hv['historial_fecha_cambio'] ?? '') ?></small>
+                    </div>
+                    <div class="text-muted">
+                        <?= htmlspecialchars($hv['historial_comentario'] ?? '') ?>
+                        <?php if (!empty($hv['usuario_nombre'])): ?>
+                        <span class="ms-2 text-secondary">· <?= htmlspecialchars($hv['usuario_nombre']) ?></span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+                <?php else: foreach (array_reverse($controlCambios) as $cc): ?>
                 <div class="p-2 px-3 border-bottom small">
                     <div class="d-flex justify-content-between">
                         <strong>v<?= htmlspecialchars($cc['version']??'?') ?></strong>
@@ -99,7 +114,7 @@ async function firmarDocumento(id) {
                     </div>
                     <div class="text-muted"><?= htmlspecialchars($cc['cambio']??'') ?></div>
                 </div>
-                <?php endforeach; ?>
+                <?php endforeach; endif; ?>
                 <?php endif; ?>
             </div>
         </div>

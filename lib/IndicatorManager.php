@@ -57,7 +57,8 @@ class IndicatorManager {
             'indicador_tendencia_esperada' => $data['indicador_tendencia_esperada'] ?? 'estable',
             'indicador_rango_minimo'    => $data['indicador_rango_minimo'] ?? null,
             'indicador_rango_maximo'    => $data['indicador_rango_maximo'] ?? null,
-            'indicador_semaforo_json'   => isset($data['indicador_semaforo_json']) ? json_encode($data['indicador_semaforo_json']) : null
+            'indicador_semaforo_json'   => isset($data['indicador_semaforo_json']) ? json_encode($data['indicador_semaforo_json']) : null,
+            'indicador_activo'          => 1,
         ]);
     }
 

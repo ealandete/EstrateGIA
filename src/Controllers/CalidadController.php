@@ -188,4 +188,34 @@ class CalidadController {
         ]);
         header('Location: /calidad?rep=1'); exit;
     }
+
+    public function cargarCriteriosMinisterio(): void {
+        $tipo = $_GET['tipo'] ?? 'SUA';
+        $criterios = $this->safeAll(
+            "SELECT * FROM cal_estandares_acreditacion WHERE estandar_tipo=? AND estandar_activo=1 ORDER BY estandar_grupo, estandar_codigo",
+            [$tipo]
+        );
+        header('Content-Type: application/json');
+        echo json_encode(['tipo' => $tipo, 'total' => count($criterios), 'criterios' => $criterios], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    public function actualizarChecklist(): void {
+        $itemId = (int)$_POST['item_id'];
+        $this->safeUpdate('cal_checklist_items', [
+            'item_servicio' => $_POST['item_servicio'] ?? '',
+            'item_criterio' => $_POST['item_criterio'] ?? '',
+            'item_estandar' => $_POST['item_estandar'] ?? '',
+            'item_tipo' => $_POST['item_tipo'] ?? 'general',
+            'item_orden' => (int)($_POST['item_orden'] ?? 0),
+            'item_activo' => (int)($_POST['item_activo'] ?? 1),
+        ], 'item_id = ?', [$itemId]);
+        header('Location: /calidad/checklist?updated=1'); exit;
+    }
+
+    public function eliminarChecklist(): void {
+        $itemId = (int)$_POST['item_id'];
+        $this->safeUpdate('cal_checklist_items', ['item_activo' => 0], 'item_id = ?', [$itemId]);
+        header('Location: /calidad/checklist?deleted=1'); exit;
+    }
 }

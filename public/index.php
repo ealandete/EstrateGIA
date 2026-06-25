@@ -155,9 +155,25 @@ $router->get('/calidad/reporte', function () { require_once BASE_PATH.'/src/Cont
 $router->post('/calidad/actividad/crear', function () { require_once BASE_PATH.'/src/Controllers/CalidadController.php'; (new CalidadController())->crearActividad(); });
 $router->post('/calidad/reporte/crear', function () { require_once BASE_PATH.'/src/Controllers/CalidadController.php'; (new CalidadController())->crearReporte(); });
 $router->post('/calidad/estandares/crear', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->crearEstandar(); });
+$router->post('/calidad/estandares/editar', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->editarEstandar(); });
 $router->post('/calidad/estandares/eliminar', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->eliminarEstandar(); });
 $router->post('/calidad/pamec/crear', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->crearPamec(); });
+$router->post('/calidad/pamec/programa/crear', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->crearPamecPrograma(); });
+$router->post('/calidad/pamec/equipo/crear', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->crearEquipoPamec(); });
+$router->post('/calidad/pamec/autoevaluacion/guardar', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->guardarAutoevaluacionPamec(); });
+$router->post('/calidad/pamec/auditoria/crear', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->crearAuditoriaPamec(); });
+$router->post('/calidad/rondas/crear', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->crearRondaCalidad(); });
+$router->post('/calidad/checklist/crear', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->crearChecklistItem(); });
+$router->post('/calidad/checklist/actualizar', function () { require_once BASE_PATH.'/src/Controllers/CalidadController.php'; (new CalidadController())->actualizarChecklist(); });
+$router->post('/calidad/checklist/eliminar', function () { require_once BASE_PATH.'/src/Controllers/CalidadController.php'; (new CalidadController())->eliminarChecklist(); });
+$router->get('/calidad/checklist', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->verChecklist(); });
 $router->post('/calidad/riesgos/crear', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->crearRiesgo(); });
+$router->get('/api/calidad/criterios-ministerio', function () { require_once BASE_PATH.'/src/Controllers/CalidadController.php'; (new CalidadController())->cargarCriteriosMinisterio(); });
+
+// ===== ACREDITACIÓN (FLUJO PROFESIONAL) =====
+$router->get('/acreditacion', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->acreditacion(); });
+$router->post('/acreditacion/evaluar', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->evaluarEstandar(); });
+$router->get('/acreditacion/reporte', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->reporteAcreditacion(); });
 
 // ===== NC =====
 $router->get('/nc', function () { require_once BASE_PATH.'/src/Controllers/NCController.php'; (new NCController())->index(); });
@@ -179,6 +195,7 @@ $router->get('/documentos/aprobar/{id}', function ($id) { require_once BASE_PATH
 $router->post('/documentos/rechazar/{id}', function ($id) { require_once BASE_PATH.'/src/Controllers/DocumentosController.php'; (new DocumentosController())->rechazar((int)$id); });
 $router->post('/documentos/solicitar-revision/{id}', function ($id) { require_once BASE_PATH.'/src/Controllers/DocumentosController.php'; (new DocumentosController())->solicitarRevision((int)$id); });
 $router->post('/documentos/nueva-version/{id}', function ($id) { require_once BASE_PATH.'/src/Controllers/DocumentosController.php'; (new DocumentosController())->nuevaVersion((int)$id); });
+$router->post('/documentos/importar-masivo', function () { require_once BASE_PATH.'/src/Controllers/DocumentosController.php'; (new DocumentosController())->importarMasivo(); });
 $router->post('/documentos/firmar/{id}', function ($id) {
     Auth::guard();
     $core = EstrateGiaCore::getInstance();
@@ -543,6 +560,7 @@ $router->post('/admin/config/asignar-usuario', function () { require_once BASE_P
 $router->post('/admin/config/crear-empresa', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->crearEmpresa(); });
 $router->post('/admin/config/editar-empresa', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->editarEmpresa(); });
 $router->post('/admin/config/guardar-personalizacion', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->guardarPersonalizacion(); });
+$router->post('/admin/config/codificacion-documental', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->guardarCodificacionDocumental(); });
 
 // ===== LICENCIAS (SUPER_ADMIN only) — Politica 23 §5.3 =====
 

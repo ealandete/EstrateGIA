@@ -94,8 +94,15 @@ class ProcesosController {
     // CRUD PROCESO
     // ========================================================================
     public function crearProceso(): void {
+        $macroId = (int)($_POST['macro_id'] ?? 0);
+        $empresaId = (int)($_POST['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+
+        if ($macroId <= 0) {
+            $macroId = $this->autoCrearMacroprocesoDefault($empresaId);
+        }
+
         $id = $this->safeInsert('proc_procesos', [
-            'proceso_macro_id' => (int)$_POST['macro_id'],
+            'proceso_macro_id' => $macroId,
             'proceso_codigo' => $_POST['codigo'] ?? '',
             'proceso_nombre' => $_POST['nombre'],
             'proceso_descripcion' => $_POST['descripcion'] ?? '',
@@ -106,6 +113,27 @@ class ProcesosController {
         ]);
         EstrateGiaCore::getInstance()->logAction(Auth::userId(), 'crear', 'procesos', 'proceso', $id); header('Location: /procesos/ver/' . $id . '?created=p');
         exit;
+    }
+
+    private function autoCrearMacroprocesoDefault(int $empresaId): int {
+        $existing = $this->safeOne(
+            "SELECT macro_id FROM proc_macroprocesos WHERE macro_empresa_id = ? AND macro_activo = 1 ORDER BY macro_orden ASC LIMIT 1",
+            [$empresaId]
+        );
+        if ($existing) {
+            return (int)$existing['macro_id'];
+        }
+
+        $count = (int)($this->safe("SELECT COALESCE(MAX(macro_orden),0) FROM proc_macroprocesos WHERE macro_empresa_id = ?", [$empresaId]) ?? 0);
+        $macroId = $this->safeInsert('proc_macroprocesos', [
+            'macro_empresa_id' => $empresaId,
+            'macro_codigo' => 'MP-GEN' . ($count + 1),
+            'macro_nombre' => 'Procesos Generales',
+            'macro_descripcion' => 'Macroproceso creado automáticamente',
+            'macro_tipo' => 'misional',
+            'macro_orden' => $count + 1,
+        ]);
+        return $macroId ?? 0;
     }
 
     public function verProceso(int $id): void {

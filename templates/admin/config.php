@@ -1,12 +1,14 @@
-<?php $ok = $_GET['empresa_ok'] ?? null; $asignado = $_GET['asignado'] ?? null; ?>
+<?php $ok = $_GET['empresa_ok'] ?? null; $asignado = $_GET['asignado'] ?? null; $codifOk = $_GET['codif_ok'] ?? null; ?>
 <?php if ($ok): ?><div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>Empresa actualizada</div><?php endif; ?>
 <?php if ($asignado): ?><div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>Usuario asignado a empresa</div><?php endif; ?>
+<?php if ($codifOk): ?><div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>Configuración de codificación guardada</div><?php endif; ?>
 
 <!-- Pestañas de configuración -->
 <ul class="nav nav-tabs mb-4" id="configTabs">
     <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tabEmpresas"><i class="fas fa-building me-1"></i>Empresas</a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabSistema"><i class="fas fa-gear me-1"></i>Sistema</a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabPersonalizacion"><i class="fas fa-palette me-1"></i>Personalización</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabCodificacion" id="tabCodificacionLink"><i class="fas fa-tag me-1"></i>Codificación Documental</a></li>
 </ul>
 
 <div class="tab-content">
@@ -144,6 +146,54 @@
             </form>
         </div></div>
     </div>
+
+    <!-- TAB 4: CODIFICACIÓN DOCUMENTAL -->
+    <div class="tab-pane fade" id="tabCodificacion">
+        <div class="card-box">
+            <div class="card-box-header"><i class="fas fa-tag me-2"></i>Configuración de Codificación Documental</div>
+            <div class="card-box-body">
+                <p class="small text-muted mb-3">Configure el esquema de codificación para documentos, procesos e indicadores de cada empresa. El código se genera automáticamente al crear nuevos registros.</p>
+                <form method="POST" action="/admin/config/codificacion-documental">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label small">Empresa</label>
+                            <select name="empresa_id" class="form-select form-select-sm" id="codifEmpresaSel">
+                                <?php foreach ($empresas as $e): ?>
+                                <option value="<?= $e['empresa_id'] ?>"><?= htmlspecialchars($e['empresa_nombre']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small">Módulo</label>
+                            <select name="modulo" class="form-select form-select-sm">
+                                <option value="documentos">Documentos</option>
+                                <option value="procesos">Procesos</option>
+                                <option value="indicadores">Indicadores</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small">Prefijo</label>
+                            <input type="text" name="prefijo" class="form-control form-control-sm" placeholder="Ej: DOC, PROC, IND" value="DOC">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small">Formato del Código</label>
+                            <input type="text" name="formato" class="form-control form-control-sm" placeholder="{prefijo}-{tipo}-{consecutivo}" value="{prefijo}-{tipo}-{consecutivo}">
+                            <small class="text-muted">Variables: <code>{prefijo}</code> <code>{tipo}</code> <code>{consecutivo}</code> <code>{separador}</code></small>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small">Separador</label>
+                            <input type="text" name="separador" class="form-control form-control-sm" maxlength="5" value="-">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small">Consecutivo Actual</label>
+                            <input type="number" name="consecutivo_actual" class="form-control form-control-sm" min="0" value="0">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-3"><i class="fas fa-save me-1"></i>Guardar Codificación</button>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Modal Editar Empresa -->
@@ -183,4 +233,12 @@ function editarEmpresa(id, nombre, razon, nit, sector, dir, tel, email) {
     document.getElementById('editEmpEmail').value = email;
     new bootstrap.Modal(document.getElementById('modalEditarEmpresa')).show();
 }
+
+// Activar tab de codificación si venimos de guardar
+(function() {
+    if (window.location.hash === '#tabCodificacion') {
+        var tabEl = document.getElementById('tabCodificacionLink');
+        if (tabEl) { var tab = new bootstrap.Tab(tabEl); tab.show(); }
+    }
+})();
 </script>

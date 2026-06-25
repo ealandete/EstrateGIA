@@ -160,6 +160,8 @@ class DocManager {
             'documento_titulo'              => $data['documento_titulo'],
             'documento_tipo'                => $data['documento_tipo'],
             'documento_version'             => $data['documento_version'] ?? '1.0',
+            'documento_estado'              => $data['documento_estado'] ?? 'borrador',
+            'documento_codigo'              => $data['documento_codigo'] ?? null,
             'documento_contenido_html'      => $data['documento_contenido_html'] ?? null,
             'documento_archivo_url'         => $data['documento_archivo_url'] ?? null,
             'documento_elaborado_por'       => $data['documento_elaborado_por'] ?? null,
@@ -242,10 +244,10 @@ class DocManager {
         if (!$doc) throw new InvalidArgumentException('Documento no encontrado');
 
         $versionAnterior = $doc['documento_version'];
+        $contenidoAnterior = $doc['documento_contenido_html'] ?? '';
         $partes = explode('.', $versionAnterior);
         $nuevaVersion = $partes[0] . '.' . ((int)($partes[1] ?? 0) + 1);
 
-        // Registrar cambio de versión en el documento actual
         $controlCambios = json_decode($doc['documento_control_cambios'] ?? '[]', true) ?: [];
         $controlCambios[] = [
             'version' => $versionAnterior,
@@ -262,7 +264,86 @@ class DocManager {
             'documento_control_cambios' => $controlCambios
         ]);
 
+        $this->core->insert('doc_historial', [
+            'historial_documento_id'        => $documentoId,
+            'historial_version_anterior'    => $versionAnterior,
+            'historial_version_nueva'       => $nuevaVersion,
+            'historial_contenido_anterior'  => $contenidoAnterior,
+            'historial_contenido_nuevo'     => $contenido,
+            'historial_fecha_cambio'        => date('Y-m-d H:i:s'),
+            'historial_usuario_id'          => $elaboradoPor,
+            'historial_accion'              => 'actualizacion',
+            'historial_comentario'          => 'Versión actualizada de ' . $versionAnterior . ' a ' . $nuevaVersion,
+        ]);
+
         return $documentoId;
+    }
+
+    public function getHistorialVersiones(int $documentoId): array {
+        return $this->core->fetchAll(
+            'SELECT h.*, CONCAT(u.usuario_nombre, \' \', u.usuario_apellido) as usuario_nombre
+             FROM doc_historial h
+             LEFT JOIN sys_usuarios u ON h.historial_usuario_id = u.usuario_id
+             WHERE h.historial_documento_id = :did
+             ORDER BY h.historial_fecha_cambio DESC',
+            ['did' => $documentoId]
+        );
+    }
+
+    public function getCodificacion(int $empresaId, string $modulo = 'documentos'): ?array {
+        return $this->core->fetchOne(
+            'SELECT * FROM conf_codificacion WHERE codif_empresa_id = :eid AND codif_modulo = :mod AND codif_activo = 1',
+            ['eid' => $empresaId, 'mod' => $modulo]
+        );
+    }
+
+    public function generarCodigoDocumento(int $empresaId, string $tipo): string {
+        $cfg = $this->getCodificacion($empresaId, 'documentos');
+
+        if (!$cfg || empty($cfg['codif_formato'])) {
+            $prefijo = $cfg['codif_prefijo'] ?? 'DOC';
+            $consecutivo = (int)($cfg['codif_consecutivo_actual'] ?? 0) + 1;
+            $this->core->update('conf_codificacion', ['codif_consecutivo_actual' => $consecutivo], 'codif_id = :id', ['id' => $cfg['codif_id'] ?? 0]);
+            return $prefijo . '-' . strtoupper(substr($tipo, 0, 3)) . '-' . str_pad((string)$consecutivo, 4, '0', STR_PAD_LEFT);
+        }
+
+        $prefijo = $cfg['codif_prefijo'] ?? 'DOC';
+        $consecutivo = (int)($cfg['codif_consecutivo_actual'] ?? 0) + 1;
+        $this->core->update('conf_codificacion', ['codif_consecutivo_actual' => $consecutivo], 'codif_id = :id', ['id' => $cfg['codif_id']]);
+
+        $codigo = $cfg['codif_formato'];
+        $sep = $cfg['codif_separador'] ?? '-';
+        $codigo = str_replace('{prefijo}', $prefijo, $codigo);
+        $codigo = str_replace('{tipo}', strtoupper(substr($tipo, 0, 3)), $codigo);
+        $codigo = str_replace('{consecutivo}', str_pad((string)$consecutivo, 4, '0', STR_PAD_LEFT), $codigo);
+        $codigo = str_replace('{separador}', $sep, $codigo);
+
+        return $codigo;
+    }
+
+    public function guardarConfiguracionCodificacion(int $empresaId, array $data): bool {
+        $existing = $this->core->fetchOne(
+            'SELECT codif_id FROM conf_codificacion WHERE codif_empresa_id = :eid AND codif_modulo = :mod',
+            ['eid' => $empresaId, 'mod' => $data['codif_modulo'] ?? 'documentos']
+        );
+
+        $codifData = [
+            'codif_prefijo'            => $data['codif_prefijo'] ?? '',
+            'codif_formato'            => $data['codif_formato'] ?? '{prefijo}-{tipo}-{consecutivo}',
+            'codif_separador'          => $data['codif_separador'] ?? '-',
+            'codif_consecutivo_actual' => (int)($data['codif_consecutivo_actual'] ?? 0),
+            'codif_activo'             => 1,
+        ];
+
+        if ($existing) {
+            return $this->core->update('conf_codificacion', $codifData, 'codif_empresa_id = :eid AND codif_modulo = :mod', [
+                'eid' => $empresaId, 'mod' => $data['codif_modulo'] ?? 'documentos'
+            ]) > 0;
+        }
+
+        $codifData['codif_empresa_id'] = $empresaId;
+        $codifData['codif_modulo'] = $data['codif_modulo'] ?? 'documentos';
+        return $this->core->insert('conf_codificacion', $codifData) > 0;
     }
 
     // ========================================================================

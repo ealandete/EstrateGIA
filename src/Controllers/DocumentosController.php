@@ -121,7 +121,7 @@ class DocumentosController {
             'documento_empresa_id' => $empresaId,
             'documento_proceso_id' => $procesoId,
             'documento_norma_id' => $_POST['norma_id'] ?? null,
-            'documento_codigo' => $_POST['codigo'] ?? '',
+            'documento_codigo' => empty($_POST['codigo']) ? $dm->generarCodigoDocumento($empresaId, $tipo) : $_POST['codigo'],
             'documento_titulo' => $_POST['titulo'],
             'documento_tipo' => $tipo,
             'documento_contenido_html' => $_POST['contenido'] ?? '',
@@ -159,6 +159,7 @@ class DocumentosController {
         $dm = new DocManager();
         $doc = $dm->getDocumento($id);
         if (!$doc) { http_response_code(404); echo 'No encontrado'; return; }
+        $historial = $dm->getHistorialVersiones($id);
         $pageTitle = htmlspecialchars($doc['documento_titulo']);
         ob_start(); require BASE_PATH . '/templates/documentos/ver.php';
         $content = ob_get_clean(); require BASE_PATH . '/templates/layout.php';
@@ -210,5 +211,123 @@ class DocumentosController {
     public function nuevaVersion(int $id): void {
         (new DocManager())->crearNuevaVersion($id, $_POST['contenido'] ?? '', Auth::userId());
         header('Location: /documentos/ver/' . $id . '?version=ok'); exit;
+    }
+
+    public function importarMasivo(): void {
+        $dm = new DocManager();
+        $empresaId = (int)($_POST['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+
+        $file = $_FILES['archivo_csv'] ?? null;
+        if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Archivo CSV no recibido']);
+            exit;
+        }
+
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if ($ext !== 'csv') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Solo se aceptan archivos CSV']);
+            exit;
+        }
+
+        $handle = fopen($file['tmp_name'], 'r');
+        $headers = fgetcsv($handle);
+        if (!$headers) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'CSV vacío o sin encabezados']);
+            exit;
+        }
+
+        $headers = array_map('trim', $headers);
+        $headerMap = array_flip($headers);
+
+        $creados = 0;
+        $errores = 0;
+        $detalle = [];
+
+        $procesoCache = [];
+        $procesosRaw = $this->safeAll(
+            "SELECT p.proceso_id, p.proceso_codigo, p.proceso_nombre FROM proc_procesos p
+             JOIN proc_macroprocesos m ON p.proceso_macro_id = m.macro_id
+             WHERE m.macro_empresa_id = ? AND p.proceso_activo = 1",
+            [$empresaId]
+        );
+        foreach ($procesosRaw as $p) {
+            $procesoCache[strtolower($p['proceso_codigo'] ?? '')] = $p['proceso_id'];
+            $procesoCache[strtolower($p['proceso_nombre'] ?? '')] = $p['proceso_id'];
+        }
+
+        while (($row = fgetcsv($handle)) !== false) {
+            $data = [];
+            foreach ($headers as $i => $h) {
+                $data[$h] = trim($row[$i] ?? '');
+            }
+
+            $codigo = $data['codigo'] ?? '';
+            $nombre = $data['nombre'] ?? '';
+            $descripcion = $data['descripcion'] ?? '';
+            $tipo = $data['tipo'] ?? 'otro';
+            $procesoCodigo = $data['proceso_codigo'] ?? '';
+            $version = $data['version'] ?? '1.0';
+            $fechaVigencia = $data['fecha_vigencia'] ?? null;
+            $estado = $data['estado'] ?? 'borrador';
+            $contenido = $data['contenido'] ?? '';
+
+            if (empty($nombre)) {
+                $errores++;
+                $detalle[] = ['fila' => count($creados) + $errores, 'error' => 'Nombre requerido'];
+                continue;
+            }
+
+            $tiposValidos = ['manual_calidad','procedimiento','instructivo','registro','formato','politica','plan','informe','auditoria','otro'];
+            if (!in_array($tipo, $tiposValidos)) {
+                $tipo = 'otro';
+            }
+
+            $estadosValidos = ['borrador','revision','aprobado','publicado','obsoleto'];
+            if (!in_array($estado, $estadosValidos)) {
+                $estado = 'borrador';
+            }
+
+            $procesoId = null;
+            if ($procesoCodigo) {
+                $procesoId = $procesoCache[strtolower($procesoCodigo)] ?? null;
+            }
+
+            if (empty($codigo)) {
+                $codigo = $dm->generarCodigoDocumento($empresaId, $tipo);
+            }
+
+            try {
+                $docId = $dm->createDocumento([
+                    'documento_empresa_id'        => $empresaId,
+                    'documento_proceso_id'        => $procesoId,
+                    'documento_codigo'            => $codigo,
+                    'documento_titulo'            => $nombre,
+                    'documento_tipo'              => $tipo,
+                    'documento_contenido_html'    => $contenido,
+                    'documento_version'           => $version,
+                    'documento_estado'            => $estado,
+                    'documento_fecha_vigencia'    => $fechaVigencia ?: null,
+                    'documento_elaborado_por'     => Auth::userId(),
+                ]);
+
+                $creados++;
+            } catch (\Throwable $e) {
+                $errores++;
+                $detalle[] = ['fila' => $creados + $errores, 'error' => $e->getMessage()];
+            }
+        }
+        fclose($handle);
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success'  => true,
+            'creados'  => $creados,
+            'errores'  => $errores,
+            'detalle'  => $detalle,
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
     }
 }

@@ -34,6 +34,7 @@ foreach ($macroprocesos as $mp) {
                     <button class="btn btn-primary btn-sm ms-1"><i class="fas fa-search"></i></button>
                 </form>
                 <a href="/documentos/crear?empresa_id=<?= $empresaId ?>" class="btn btn-success btn-sm"><i class="fas fa-plus me-1"></i>Nuevo Documento</a>
+                <a href="#" class="btn btn-outline-info btn-sm" onclick="document.getElementById('importCSVForm').style.display='block'; return false"><i class="fas fa-upload me-1"></i>Importar CSV</a>
             </div>
         </div>
 
@@ -117,6 +118,61 @@ foreach ($macroprocesos as $mp) {
         <?php endif; ?>
     </div>
 </div>
+
+<!-- Formulario de importación CSV (oculto por defecto) -->
+<div id="importCSVForm" style="display:none" class="card-box mt-3">
+    <div class="card-box-header d-flex justify-content-between align-items-center">
+        <div><i class="fas fa-file-csv me-2"></i>Importar Documentos desde CSV</div>
+        <button type="button" class="btn-close" onclick="document.getElementById('importCSVForm').style.display='none'"></button>
+    </div>
+    <div class="card-box-body">
+        <p class="small text-muted mb-3">
+            Archivo CSV con columnas: <code>codigo, nombre, descripcion, tipo, proceso_codigo, version, fecha_vigencia, estado, contenido</code><br>
+            Si se omite el código, se genera usando la codificación configurada de la empresa.
+        </p>
+        <form id="csvUploadForm" enctype="multipart/form-data">
+            <input type="hidden" name="empresa_id" value="<?= $empresaId ?>">
+            <div class="input-group">
+                <input type="file" name="archivo_csv" class="form-control form-control-sm" accept=".csv" required>
+                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-upload me-1"></i>Importar</button>
+            </div>
+        </form>
+        <div id="importResult" class="mt-3" style="display:none"></div>
+    </div>
+</div>
+
+<script>
+document.getElementById('csvUploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var btn = this.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Importando...';
+    var formData = new FormData(this);
+    fetch('/documentos/importar-masivo', {method:'POST',body:formData})
+        .then(r => r.json())
+        .then(j => {
+            var div = document.getElementById('importResult');
+            div.style.display = 'block';
+            if (j.success) {
+                div.innerHTML = '<div class="alert alert-success"><strong>' + j.creados + ' documentos creados</strong>' +
+                    (j.errores > 0 ? ' · ' + j.errores + ' errores' : '') +
+                    (j.detalle && j.detalle.length > 0 ? '<br><small>' + j.detalle.map(function(d){return 'Fila ' + d.fila + ': ' + d.error}).join('<br>') + '</small>' : '') +
+                    '</div>';
+                if (j.creados > 0) setTimeout(function(){ location.reload(); }, 2000);
+            } else {
+                div.innerHTML = '<div class="alert alert-danger">' + (j.error || 'Error desconocido') + '</div>';
+            }
+        })
+        .catch(function(e) {
+            document.getElementById('importResult').style.display = 'block';
+            document.getElementById('importResult').innerHTML = '<div class="alert alert-danger">Error: ' + e.message + '</div>';
+        })
+        .finally(function() {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-upload me-1"></i>Importar';
+        });
+});
+</script>
 
 <style>
 .hover-bg:hover { background: #f5f6fa; }

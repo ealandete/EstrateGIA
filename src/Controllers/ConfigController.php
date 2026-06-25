@@ -89,4 +89,21 @@ class ConfigController {
         header('Location: /admin/config?ok=1');
         exit;
     }
+
+    public function guardarCodificacionDocumental(): void {
+        $empresaId = (int)$_POST['empresa_id'];
+        $modulo = $_POST['modulo'] ?? 'documentos';
+        (new DocManager())->guardarConfiguracionCodificacion($empresaId, [
+            'codif_modulo'            => $modulo,
+            'codif_prefijo'           => $_POST['prefijo'] ?? '',
+            'codif_formato'           => $_POST['formato'] ?? '{prefijo}-{tipo}-{consecutivo}',
+            'codif_separador'         => $_POST['separador'] ?? '-',
+            'codif_consecutivo_actual'=> (int)($_POST['consecutivo_actual'] ?? 0),
+        ]);
+        $this->core->audit('configurar_codificacion', 'conf_codificacion', null, null,
+            ['empresa_id' => $empresaId, 'modulo' => $modulo],
+            'Configuración de codificación documental');
+        header('Location: /admin/config?codif_ok=1#tabCodificacion');
+        exit;
+    }
 }
