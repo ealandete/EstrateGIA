@@ -246,6 +246,16 @@ $router->post('/sst/inspeccion/guardar', function () { require_once BASE_PATH.'/
 $router->post('/sst/emergencia/guardar', function () { require_once BASE_PATH.'/src/Controllers/SSTController.php'; (new SSTController())->crearEmergencia(); });
 $router->post('/sst/normatividad/guardar', function () { require_once BASE_PATH.'/src/Controllers/SSTController.php'; (new SSTController())->crearReqLegal(); });
 $router->post('/sst/reporte/generar', function () { require_once BASE_PATH.'/src/Controllers/SSTController.php'; (new SSTController())->generarReporte(); });
+// SST - Auditorias
+$router->post('/sst/auditoria/crear', function () { require_once BASE_PATH.'/src/Controllers/SSTController.php'; (new SSTController())->crearAuditoria(); });
+// SST - Plantilla personal (HHT) 
+$router->post('/sst/plantilla/crear', function () { require_once BASE_PATH.'/src/Controllers/SSTController.php'; (new SSTController())->crearPlantilla(); });
+// SST - Investigacion causa raiz
+$router->post('/sst/investigacion/guardar', function () { require_once BASE_PATH.'/src/Controllers/SSTController.php'; (new SSTController())->guardarInvestigacion(); });
+// SST - Res 0312 autoevaluacion
+$router->post('/sst/evaluacion-0312/guardar', function () { require_once BASE_PATH.'/src/Controllers/SSTController.php'; (new SSTController())->guardarEvaluacion0312(); });
+// Ambiental - Emergencias
+$router->post('/ambiental/emergencia/crear', function () { require_once BASE_PATH.'/src/Controllers/AmbientalController.php'; (new AmbientalController())->crearEmergenciaAmbiental(); });
 
 // ===== AMBIENTAL =====
 $router->get('/ambiental', function () { require_once BASE_PATH.'/src/Controllers/AmbientalController.php'; (new AmbientalController())->index(); });

@@ -227,6 +227,18 @@ class AmbientalController {
         return ['labels' => $labels, 'values' => $values];
     }
 
+    public function crearEmergenciaAmbiental(): void {
+        $empresaId = (int)($_POST['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        (new AmbientalManager())->core->insert('amb_emergencias', [
+            'empresa_id' => $empresaId,
+            'emergencia_tipo' => $_POST['tipo'] ?? 'otro',
+            'emergencia_descripcion' => $_POST['descripcion'] ?? '',
+            'emergencia_procedimiento' => $_POST['procedimiento'] ?? '',
+            'emergencia_proximo_simulacro' => $_POST['proximo_simulacro'] ?? null,
+        ]);
+        header('Location: /ambiental?seccion=emergencias&ok=1'); exit;
+    }
+
     public function guardarAutoevaluacion(): void {
         $empresaId = (int)($_POST['empresa_id'] ?? 2);
         $valores = json_decode($_POST['valores'] ?? '[]', true);

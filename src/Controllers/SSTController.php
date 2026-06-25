@@ -141,4 +141,67 @@ class SSTController {
         echo json_encode(['success' => true, 'puntaje' => $puntaje]);
         exit;
     }
+
+    public function crearAuditoria(): void {
+        $empresaId = (int)($_POST['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $this->safeInsert('sst_auditorias', [
+            'empresa_id' => $empresaId,
+            'sst_aud_fecha' => $_POST['fecha'] ?? date('Y-m-d'),
+            'sst_aud_tipo' => $_POST['tipo'] ?? 'interna',
+            'sst_aud_alcance' => $_POST['alcance'] ?? '',
+            'sst_aud_criterios' => $_POST['criterios'] ?? 'Decreto 1072',
+            'sst_aud_auditor_lider' => $_POST['auditor_lider'] ?? '',
+            'sst_aud_estado' => $_POST['estado'] ?? 'programada',
+        ]);
+        header('Location: /sst?seccion=auditorias&ok=1'); exit;
+    }
+
+    public function crearPlantilla(): void {
+        $empresaId = (int)($_POST['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $this->safeInsert('sst_plantilla_personal', [
+            'empresa_id' => $empresaId,
+            'plantilla_mes' => $_POST['mes'] ?? date('Y-m'),
+            'plantilla_num_trabajadores' => (int)($_POST['num_trabajadores'] ?? 0),
+            'plantilla_horas_trabajadas' => (float)($_POST['horas_trabajadas'] ?? 0),
+            'plantilla_dias_programados' => (int)($_POST['dias_programados'] ?? 30),
+        ]);
+        header('Location: /sst?seccion=dashboard&ok=1'); exit;
+    }
+
+    public function guardarInvestigacion(): void {
+        $id = (int)$_POST['inc_id'];
+        $this->safeUpdate('sst_incidentes', [
+            'inc_metodologia' => $_POST['metodologia'] ?? null,
+            'inc_porque_1' => $_POST['porque_1'] ?? '',
+            'inc_porque_2' => $_POST['porque_2'] ?? '',
+            'inc_porque_3' => $_POST['porque_3'] ?? '',
+            'inc_porque_4' => $_POST['porque_4'] ?? '',
+            'inc_porque_5' => $_POST['porque_5'] ?? '',
+            'inc_causa_raiz' => $_POST['causa_raiz'] ?? '',
+            'inc_ishikawa_metodo' => $_POST['ishikawa_metodo'] ?? '',
+            'inc_ishikawa_maquina' => $_POST['ishikawa_maquina'] ?? '',
+            'inc_ishikawa_mano_obra' => $_POST['ishikawa_mano_obra'] ?? '',
+            'inc_ishikawa_material' => $_POST['ishikawa_material'] ?? '',
+            'inc_ishikawa_medio_ambiente' => $_POST['ishikawa_medio_ambiente'] ?? '',
+            'inc_ishikawa_medicion' => $_POST['ishikawa_medicion'] ?? '',
+            'inc_lecciones_aprendidas' => $_POST['lecciones_aprendidas'] ?? '',
+            'inc_fecha_investigacion' => date('Y-m-d'),
+        ], 'inc_id=?', [$id]);
+        header('Location: /sst?seccion=incidentes&ok=1'); exit;
+    }
+
+    public function guardarEvaluacion0312(): void {
+        $empresaId = (int)($_POST['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $items = $_POST['items'] ?? [];
+        foreach ($items as $evalId => $data) {
+            $this->safeUpdate('sst_evaluacion_0312', [
+                'eval_cumple' => $data['cumple'] ?? 'no',
+                'eval_puntaje' => (float)($data['puntaje'] ?? 0),
+                'eval_evidencia' => $data['evidencia'] ?? '',
+                'eval_fecha_evaluacion' => date('Y-m-d'),
+                'eval_responsable_id' => Auth::userId(),
+            ], 'eval_id=?', [(int)$evalId]);
+        }
+        header('Location: /sst?seccion=autoevaluacion&ok=1'); exit;
+    }
 }

@@ -175,17 +175,28 @@ class SSTManager extends BaseHSEManager {
         ]);
     }
 
-    public function getEstadisticasSST(int $empresaId, int $anio): array {
-        $incidentes = $this->core->fetchColumn("SELECT COUNT(*) FROM sst_incidentes WHERE inc_empresa_id=:eid AND YEAR(inc_fecha)=:anio",['eid'=>$empresaId,'anio'=>$anio]);
-        $accidentes = $this->core->fetchColumn("SELECT COUNT(*) FROM sst_incidentes WHERE inc_empresa_id=:eid AND inc_tipo='accidente' AND YEAR(inc_fecha)=:anio",['eid'=>$empresaId,'anio'=>$anio]);
-        $diasPerdidos = $this->core->fetchColumn("SELECT COALESCE(SUM(inc_dias_incapacidad),0) FROM sst_incidentes WHERE inc_empresa_id=:eid AND YEAR(inc_fecha)=:anio",['eid'=>$empresaId,'anio'=>$anio])??0;
-        $costos = $this->core->fetchColumn("SELECT COALESCE(SUM(inc_costo),0) FROM sst_incidentes WHERE inc_empresa_id=:eid AND YEAR(inc_fecha)=:anio",['eid'=>$empresaId,'anio'=>$anio])??0;
-        $actividadesTotal = $this->core->fetchColumn("SELECT COUNT(*) FROM sst_plan_actividades a JOIN sst_plan_trabajo p ON a.sst_plan_id=p.sst_plan_id WHERE p.empresa_id=:eid AND p.sst_plan_anio=:anio",['eid'=>$empresaId,'anio'=>$anio])?:1;
-        $actividadesCompletadas = $this->core->fetchColumn("SELECT COUNT(*) FROM sst_plan_actividades a JOIN sst_plan_trabajo p ON a.sst_plan_id=p.sst_plan_id WHERE p.empresa_id=:eid AND p.sst_plan_anio=:anio AND a.sst_act_estado='completada'",['eid'=>$empresaId,'anio'=>$anio])??0;
-        $capacitaciones = $this->core->fetchColumn("SELECT COUNT(*) FROM sst_capacitaciones WHERE empresa_id=:eid AND YEAR(sst_cap_fecha)=:anio",['eid'=>$empresaId,'anio'=>$anio])??0;
-        $examenes = $this->core->fetchColumn("SELECT COUNT(*) FROM sst_examenes WHERE empresa_id=:eid AND YEAR(sst_exm_fecha)=:anio",['eid'=>$empresaId,'anio'=>$anio])??0;
-        return compact('incidentes','accidentes','diasPerdidos','costos','actividadesTotal','actividadesCompletadas','capacitaciones','examenes');
-    }
+     public function getEstadisticasSST(int $empresaId, int $anio): array {
+         $incidentes = $this->core->fetchColumn("SELECT COUNT(*) FROM sst_incidentes WHERE inc_empresa_id=:eid AND YEAR(inc_fecha)=:anio",['eid'=>$empresaId,'anio'=>$anio]);
+         $accidentes = $this->core->fetchColumn("SELECT COUNT(*) FROM sst_incidentes WHERE inc_empresa_id=:eid AND inc_tipo='accidente' AND YEAR(inc_fecha)=:anio",['eid'=>$empresaId,'anio'=>$anio]);
+         $diasPerdidos = $this->core->fetchColumn("SELECT COALESCE(SUM(inc_dias_incapacidad),0) FROM sst_incidentes WHERE inc_empresa_id=:eid AND YEAR(inc_fecha)=:anio",['eid'=>$empresaId,'anio'=>$anio])??0;
+         $costos = $this->core->fetchColumn("SELECT COALESCE(SUM(inc_costo),0) FROM sst_incidentes WHERE inc_empresa_id=:eid AND YEAR(inc_fecha)=:anio",['eid'=>$empresaId,'anio'=>$anio])??0;
+         $actividadesTotal = $this->core->fetchColumn("SELECT COUNT(*) FROM sst_plan_actividades a JOIN sst_plan_trabajo p ON a.sst_plan_id=p.sst_plan_id WHERE p.empresa_id=:eid AND p.sst_plan_anio=:anio",['eid'=>$empresaId,'anio'=>$anio])?:1;
+         $actividadesCompletadas = $this->core->fetchColumn("SELECT COUNT(*) FROM sst_plan_actividades a JOIN sst_plan_trabajo p ON a.sst_plan_id=p.sst_plan_id WHERE p.empresa_id=:eid AND p.sst_plan_anio=:anio AND a.sst_act_estado='completada'",['eid'=>$empresaId,'anio'=>$anio])??0;
+         $capacitaciones = $this->core->fetchColumn("SELECT COUNT(*) FROM sst_capacitaciones WHERE empresa_id=:eid AND YEAR(sst_cap_fecha)=:anio",['eid'=>$empresaId,'anio'=>$anio])??0;
+         $examenes = $this->core->fetchColumn("SELECT COUNT(*) FROM sst_examenes WHERE empresa_id=:eid AND YEAR(sst_exm_fecha)=:anio",['eid'=>$empresaId,'anio'=>$anio])??0;
+
+         $hht = $this->core->fetchColumn("SELECT COALESCE(SUM(plantilla_horas_trabajadas),0) FROM sst_plantilla_personal WHERE empresa_id=:eid AND plantilla_mes LIKE :mes",['eid'=>$empresaId,'mes'=>$anio.'%'])??0;
+         $numTrab = $this->core->fetchColumn("SELECT COALESCE(AVG(plantilla_num_trabajadores),0) FROM sst_plantilla_personal WHERE empresa_id=:eid AND plantilla_mes LIKE :mes",['eid'=>$empresaId,'mes'=>$anio.'%'])??0;
+
+         $frecuencia = $hht > 0 ? round(($accidentes * 200000) / $hht, 2) : 0;
+         $severidad = $hht > 0 ? round(($diasPerdidos * 200000) / $hht, 2) : 0;
+         $mortalidad = $hht > 0 ? round(($this->core->fetchColumn("SELECT COUNT(*) FROM sst_incidentes WHERE inc_empresa_id=:eid AND YEAR(inc_fecha)=:anio AND inc_tipo='accidente' AND inc_consecuencia='muerte'",['eid'=>$empresaId,'anio'=>$anio])??0 * 200000) / $hht, 2) : 0;
+         $prevalenciaEL = $numTrab > 0 ? round(($this->core->fetchColumn("SELECT COUNT(*) FROM sst_incidentes WHERE inc_empresa_id=:eid AND inc_tipo='enfermedad_laboral'",['eid'=>$empresaId])??0 / $numTrab) * 100000, 2) : 0;
+         $incidenciaEL = $numTrab > 0 ? round(($this->core->fetchColumn("SELECT COUNT(*) FROM sst_incidentes WHERE inc_empresa_id=:eid AND inc_tipo='enfermedad_laboral' AND YEAR(inc_fecha)=:anio",['eid'=>$empresaId,'anio'=>$anio])??0 / $numTrab) * 100000, 2) : 0;
+         $tasaAusentismo = ($numTrab > 0) ? round(($diasPerdidos / ($numTrab * 30)) * 100, 2) : 0;
+
+         return compact('incidentes','accidentes','diasPerdidos','costos','actividadesTotal','actividadesCompletadas','capacitaciones','examenes','hht','numTrab','frecuencia','severidad','mortalidad','prevalenciaEL','incidenciaEL','tasaAusentismo');
+     }
 
     public function generarReporteLey(int $empresaId, string $norma, string $nombre, string $periodo): int {
         $datos = $this->generarDatosReporte($empresaId, $norma, $periodo);
