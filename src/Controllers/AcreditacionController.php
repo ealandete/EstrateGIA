@@ -458,6 +458,24 @@ class AcreditacionController {
 
         $suaEstandares = $this->safeAll("SELECT * FROM cal_estandares_sua ORDER BY sua_eje, sua_grupo, sua_numero");
 
+        $cicloEstandares = $this->safeAll(
+            "SELECT ce.*, e.estandar_codigo, e.estandar_nombre, e.estandar_grupo, e.estandar_peso
+             FROM cal_ciclo_estandares ce
+             JOIN cal_estandares_acreditacion e ON ce.estandar_id=e.estandar_id
+             WHERE ce.ciclo_id IN (SELECT ciclo_id FROM cal_acreditacion_ciclo WHERE ciclo_empresa_id=?)
+             ORDER BY e.estandar_grupo, e.estandar_codigo",
+            [$empresaId]
+        );
+
+        $pamecProgramas = $this->safeAll("SELECT * FROM cal_pamec_programa WHERE empresa_id=? ORDER BY pamec_anio DESC", [$empresaId]);
+
+        $hallazgosVisita = $this->safeAll(
+            "SELECT hv.*, e.estandar_codigo FROM cal_visita_hallazgos hv LEFT JOIN cal_estandares_acreditacion e ON hv.estandar_id=e.estandar_id
+             WHERE hv.visita_id IN (SELECT visita_id FROM cal_acreditacion_visitas WHERE empresa_id=?)
+             ORDER BY hv.hallazgo_tipo, e.estandar_codigo",
+            [$empresaId]
+        );
+
         $usuarios = $this->safeAll("SELECT usuario_id, usuario_nombre, usuario_apellido FROM sys_usuarios WHERE usuario_activo=1 ORDER BY usuario_nombre");
 
         $this->ensureColumn('cal_evidencias_acreditacion', 'evidencia_escala', "VARCHAR(20) DEFAULT '0-100'");
@@ -570,6 +588,29 @@ class AcreditacionController {
         header('Location: /acreditacion?evaluado=1'); exit;
     }
 
+    public function crearHallazgo(): void {
+        $visitaId = (int)$_POST['visita_id'];
+        $estandarId = $_POST['estandar_id'] ? (int)$_POST['estandar_id'] : null;
+        $this->safeInsert('cal_visita_hallazgos', [
+            'visita_id' => $visitaId,
+            'estandar_id' => $estandarId,
+            'hallazgo_tipo' => $_POST['hallazgo_tipo'] ?? 'observacion',
+            'hallazgo_descripcion' => $_POST['hallazgo_descripcion'] ?? '',
+            'hallazgo_evidencia_url' => $_POST['hallazgo_evidencia_url'] ?? '',
+        ]);
+        $this->safeUpdate('cal_acreditacion_visitas', [
+            'visita_hallazgos' => $this->safe("SELECT COUNT(*) FROM cal_visita_hallazgos WHERE visita_id=?", [$visitaId]),
+        ], 'visita_id = ?', [$visitaId]);
+        header('Location: /acreditacion?hallazgo_creado=1#visitas'); exit;
+    }
+
+    public function vincularPamec(): void {
+        $cicloId = (int)$_POST['ciclo_id'];
+        $pamecId = (int)$_POST['pamec_id'];
+        $this->safeUpdate('cal_acreditacion_ciclo', ['ciclo_pamec_id' => $pamecId], 'ciclo_id = ?', [$cicloId]);
+        header('Location: /acreditacion?pamec_vinculado=1#ciclo'); exit;
+    }
+
     public function reporteAcreditacion(): void {
         $this->initTablesAcreditacion();
         $pm = new PlanManager();
@@ -624,6 +665,19 @@ class AcreditacionController {
             elseif ($c === 'cumple_parcial') $porTipo[$tipo]['parcial']++;
             elseif ($c === 'no_cumple') $porTipo[$tipo]['no_cumple']++;
             $porTipo[$tipo]['puntaje_total'] += (float)($e['ultimo_puntaje'] ?? 0);
+        }
+
+        $scorePonderado = [];
+        foreach ($estandares as $e) {
+            $tipo = $e['estandar_tipo'];
+            $peso = (float)($e['estandar_peso'] ?? 1.0);
+            $puntaje = (float)($e['ultimo_puntaje'] ?? 0);
+            if (!isset($scorePonderado[$tipo])) $scorePonderado[$tipo] = ['suma_ponderada' => 0, 'suma_pesos' => 0];
+            $scorePonderado[$tipo]['suma_ponderada'] += $puntaje * $peso;
+            $scorePonderado[$tipo]['suma_pesos'] += $peso;
+        }
+        foreach ($scorePonderado as $tipo => &$sp) {
+            $sp['puntaje_ponderado'] = $sp['suma_pesos'] > 0 ? round($sp['suma_ponderada'] / $sp['suma_pesos'], 1) : 0;
         }
 
         $heatmapData = [];

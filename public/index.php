@@ -181,6 +181,8 @@ $router->post('/acreditacion/seguimiento/crear', function () { require_once BASE
 $router->post('/acreditacion/cargar-estandares-sua', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->cargarEstandaresSUA(); });
 $router->post('/acreditacion/evaluar-servicio', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->evaluarPorServicio(); });
 $router->get('/acreditacion/api/heatmap', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->apiServicioHeatmap(); });
+$router->post('/acreditacion/hallazgo/crear', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->crearHallazgo(); });
+$router->post('/acreditacion/vincular-pamec', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->vincularPamec(); });
 $router->post('/acreditacion/ciclo/cambiar-fase', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->cambiarFase(); });
 
 // ===== NC =====
