@@ -71,9 +71,24 @@ class Auth {
 
     public static function requireAuth(): void {
         if (!self::check()) {
+            if (self::isApiRequest()) {
+                http_response_code(401);
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => 'No autenticado', 'code' => 401]);
+                exit;
+            }
             header('Location: /login.php');
             exit;
         }
+    }
+
+    private static function isApiRequest(): bool {
+        $uri = $_SERVER['REQUEST_URI'] ?? '';
+        $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
+        return str_starts_with($uri, '/api/')
+            || str_contains($uri, '/api/')
+            || str_contains($accept, 'application/json')
+            || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest');
     }
 
     public static function guard(): void {

@@ -257,6 +257,45 @@ $router->get('/soporte/kb/{id}', function ($id) { require_once BASE_PATH.'/src/C
 $router->get('/soporte/reporte/sla', function () { require_once BASE_PATH.'/src/Controllers/SoporteController.php'; (new SoporteController())->reporteSLA(); });
 
 // ===== FINANCIERO =====
+$router->get('/financiero', function () {
+    Auth::guard();
+    $pm = new PlanManager();
+    $empresaId = (int)($_GET['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 0));
+    $planes = $pm->getPlanes(null, 'completado');
+    if (!$empresaId && !empty($planes)) $empresaId = (int)$planes[0]['plan_empresa_id'];
+    $planId = (int)($_GET['plan_id'] ?? ($planes[0]['plan_id'] ?? 0));
+    require_once BASE_PATH.'/lib/FinancialManager.php';
+    $fm = new FinancialManager();
+    $resumen = $fm->getResumen($planId);
+    $presupuestos = $fm->getPresupuesto($planId);
+    $porPerspectiva = $fm->getPresupuestoByPerspectiva($planId);
+    $pageTitle = 'Gestión Financiera';
+    ob_start();
+    echo '<div class="container-fluid"><h4 class="mb-3"><i class="fas fa-dollar-sign me-2"></i>Gestión Financiera</h4>';
+    echo '<div class="row g-3 mb-4">';
+    echo '<div class="col-md-3"><div class="card-box text-center"><div class="card-box-body"><h3 class="text-success">$' . number_format($resumen['total_presupuestado'] ?? 0, 0) . '</h3><small>Presupuestado</small></div></div></div>';
+    echo '<div class="col-md-3"><div class="card-box text-center"><div class="card-box-body"><h3 class="text-primary">$' . number_format($resumen['total_ejecutado'] ?? 0, 0) . '</h3><small>Ejecutado</small></div></div></div>';
+    $pct = ($resumen['total_presupuestado'] ?? 0) > 0 ? round(($resumen['total_ejecutado'] / $resumen['total_presupuestado']) * 100, 1) : 0;
+    echo '<div class="col-md-3"><div class="card-box text-center"><div class="card-box-body"><h3>' . $pct . '%</h3><small>% Ejecución</small></div></div></div>';
+    echo '<div class="col-md-3"><div class="card-box text-center"><div class="card-box-body"><h3>' . ($resumen['periodos'] ?? 0) . '</h3><small>Periodos</small></div></div></div>';
+    echo '</div>';
+    if (!empty($porPerspectiva)) {
+        $names = ['financiera'=>'Financiera','cliente'=>'Cliente','procesos'=>'Procesos','aprendizaje'=>'Aprendizaje'];
+        $colors = ['financiera'=>'#28a745','cliente'=>'#007bff','procesos'=>'#ff9800','aprendizaje'=>'#6f42c1'];
+        echo '<h5>Presupuesto por Perspectiva</h5><table class="table table-sm"><thead><tr><th>Perspectiva</th><th>Presupuestado</th><th>Ejecutado</th><th>%</th></tr></thead><tbody>';
+        foreach ($porPerspectiva as $pp) {
+            $p = $pp['objetivo_perspectiva'] ?? 'sin_clasificar';
+            $name = $names[$p] ?? ucfirst($p);
+            $color = $colors[$p] ?? '#999';
+            $ppct = $pp['presupuestado'] > 0 ? round(($pp['ejecutado'] / $pp['presupuestado']) * 100, 1) : 0;
+            echo "<tr><td><span style='color:$color'>●</span> $name</td><td>\$" . number_format($pp['presupuestado'], 0) . "</td><td>\$" . number_format($pp['ejecutado'], 0) . "</td><td>$ppct%</td></tr>";
+        }
+        echo '</tbody></table>';
+    }
+    echo '</div>';
+    $content = ob_get_clean();
+    require BASE_PATH . '/templates/layout.php';
+});
 $router->post('/financiero/guardar', function () { require_once BASE_PATH.'/lib/FinancialManager.php'; $fm = new FinancialManager(); $id = $fm->savePresupuesto($_POST); header('Content-Type: application/json'); echo json_encode(['success' => true, 'id' => $id]); exit; });
 $router->post('/financiero/eliminar', function () { require_once BASE_PATH.'/lib/FinancialManager.php'; $fm = new FinancialManager(); $fm->deletePresupuesto((int)($_POST['id'] ?? 0)); header('Content-Type: application/json'); echo json_encode(['success' => true]); exit; });
 
@@ -335,23 +374,36 @@ $router->get('/api/powerbi', function () {
     exit;
 });
 
+// ===== LOGIN =====
+$router->get('/login', function () {
+    if (Auth::check()) { header('Location: /'); exit; }
+    require BASE_PATH . '/public/login.php';
+    exit;
+});
+
 // ===== OTROS MÓDULOS =====
 $router->get('/', function () { require_once BASE_PATH.'/src/Controllers/SIGController.php'; (new SIGController())->index(); });
+$router->get('/sig', function () { require_once BASE_PATH.'/src/Controllers/SIGController.php'; (new SIGController())->index(); });
+$router->get('/dashboard', function () { require_once BASE_PATH.'/src/Controllers/DashboardController.php'; (new DashboardController())->index(); });
 $router->get('/calendario', function () { require_once BASE_PATH.'/src/Controllers/CalendarioController.php'; (new CalendarioController())->index(); });
 $router->get('/ia', function () { require_once BASE_PATH.'/src/Controllers/IAController.php'; (new IAController())->index(); });
 $router->get('/formacion', function () { require_once BASE_PATH.'/src/Controllers/ExtrasController.php'; (new ExtrasController())->formacion(); });
+$router->get('/extras/formacion', function () { require_once BASE_PATH.'/src/Controllers/ExtrasController.php'; (new ExtrasController())->formacion(); });
 $router->post('/formacion/crear', function () { require_once BASE_PATH.'/src/Controllers/ExtrasController.php'; (new ExtrasController())->crearFormacion(); });
 $router->get('/satisfaccion', function () { require_once BASE_PATH.'/src/Controllers/ExtrasController.php'; (new ExtrasController())->satisfaccion(); });
+$router->get('/extras/satisfaccion', function () { require_once BASE_PATH.'/src/Controllers/ExtrasController.php'; (new ExtrasController())->satisfaccion(); });
 $router->post('/satisfaccion/crear', function () { require_once BASE_PATH.'/src/Controllers/ExtrasController.php'; (new ExtrasController())->crearSatisfaccion(); });
 $router->get('/crm', function () { require_once BASE_PATH.'/src/Controllers/CRMController.php'; (new CRMController())->index(); });
 $router->post('/crm/conexion/crear', function () { require_once BASE_PATH.'/src/Controllers/IntegracionesController.php'; (new IntegracionesController())->crearConexion(); });
 $router->post('/crm/mapeo/crear', function () { require_once BASE_PATH.'/src/Controllers/IntegracionesController.php'; (new IntegracionesController())->crearMapeo(); });
+$router->get('/admin', function () { header('Location: /admin/usuarios'); exit; });
 $router->get('/admin/usuarios', function () { require_once BASE_PATH.'/src/Controllers/AdminController.php'; (new AdminController())->usuarios(); });
 $router->post('/admin/usuarios/crear', function () { require_once BASE_PATH.'/src/Controllers/AdminController.php'; (new AdminController())->crearUsuario(); });
 $router->get('/admin/roles', function () { require_once BASE_PATH.'/src/Controllers/AdminController.php'; (new AdminController())->roles(); });
 $router->post('/admin/roles/guardar', function () { require_once BASE_PATH.'/src/Controllers/AdminController.php'; (new AdminController())->guardarPermisos(); });
 $router->get('/admin/auditoria', function () { require_once BASE_PATH.'/src/Controllers/AdminController.php'; (new AdminController())->auditoria(); });
 $router->get('/admin/config', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->index(); });
+$router->get('/config', function () { header('Location: /admin/config'); exit; });
 $router->post('/admin/config/asignar-usuario', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->asignarUsuarioEmpresa(); });
 $router->post('/admin/config/crear-empresa', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->crearEmpresa(); });
 $router->post('/admin/config/guardar-personalizacion', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->guardarPersonalizacion(); });

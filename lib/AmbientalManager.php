@@ -148,6 +148,8 @@ class AmbientalManager extends BaseHSEManager {
     }
 
     public function getHuellaCarbono(int $empresaId, int $anio): array {
+        $cache = CacheService::getInstance(1800);
+        return $cache->remember("huella:$empresaId:$anio", function() use ($empresaId, $anio) {
         $alcance1 = (float)($this->core->fetchColumn(
             "SELECT COALESCE(SUM(gei_cantidad * gei_factor_emision), 0) FROM amb_emisiones_gei WHERE empresa_id=:eid AND gei_alcance='alcance_1' AND gei_periodo=:anio",
             ['eid' => $empresaId, 'anio' => $anio]
@@ -176,6 +178,27 @@ class AmbientalManager extends BaseHSEManager {
         $cumplimientoMeta = $meta > 0 ? round(min(100, ($total / $meta) * 100), 1) : 0;
 
         return compact('alcance1', 'alcance2', 'alcance3', 'total', 'meta', 'variacion', 'cumplimientoMeta', 'anio');
+        });
+    }
+
+    public function getFactorEmision(string $fuente, string $version = 'IPCC-2021'): ?array {
+        return $this->core->fetchOne(
+            "SELECT * FROM amb_factores_emision WHERE factor_fuente=:fuente AND factor_version=:version AND factor_activo=1 LIMIT 1",
+            ['fuente' => $fuente, 'version' => $version]
+        );
+    }
+
+    public function getFactoresEmisionPorAlcance(string $alcance, string $version = 'IPCC-2021'): array {
+        return $this->core->fetchAll(
+            "SELECT * FROM amb_factores_emision WHERE factor_alcance=:alcance AND factor_version=:version AND factor_activo=1 ORDER BY factor_tipo_fuente, factor_fuente",
+            ['alcance' => $alcance, 'version' => $version]
+        );
+    }
+
+    public function getVersionesFactores(): array {
+        return $this->core->fetchAll(
+            "SELECT factor_version, COUNT(*) as total, MIN(factor_vigencia_inicio) as desde FROM amb_factores_emision GROUP BY factor_version ORDER BY desde DESC"
+        );
     }
 
     public function getIndicadoresCarbono(int $empresaId, int $anio): array {
@@ -569,6 +592,8 @@ class AmbientalManager extends BaseHSEManager {
     // ========================================================================
 
     public function getEstadisticasAmbiental(int $empresaId, int $anio): array {
+        $cache = CacheService::getInstance(1800);
+        return $cache->remember("estadisticas:$empresaId:$anio", function() use ($empresaId, $anio) {
         $agua = (float)($this->core->fetchColumn(
             "SELECT COALESCE(SUM(reg_valor), 0) FROM amb_registros WHERE reg_empresa_id=:eid AND reg_tipo='consumo_agua' AND YEAR(reg_fecha)=:anio",
             ['eid' => $empresaId, 'anio' => $anio]
@@ -599,5 +624,6 @@ class AmbientalManager extends BaseHSEManager {
             "SELECT COUNT(*) FROM amb_controles WHERE empresa_id=:eid", ['eid' => $empresaId]
         ) ?? 0);
         return compact('agua', 'energia', 'residuos', 'reciclaje', 'aspectos', 'programas', 'emisiones', 'controles');
+        });
     }
 }
