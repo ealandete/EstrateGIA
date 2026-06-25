@@ -218,4 +218,18 @@ class CalidadController {
         $this->safeUpdate('cal_checklist_items', ['item_activo' => 0], 'item_id = ?', [$itemId]);
         header('Location: /calidad/checklist?deleted=1'); exit;
     }
+
+    public function habilitacionDashboard(): void {
+        $empresaId = (int)($_GET['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $servicios = $this->safeAll("SELECT h.*, (SELECT COUNT(*) FROM cal_habilitacion_estandares he WHERE he.hab_id=h.hab_id AND he_cumple='si') as estandares_cumplen, (SELECT COUNT(*) FROM cal_habilitacion_estandares he WHERE he.hab_id=h.hab_id) as total_estandares FROM cal_habilitacion h WHERE h.empresa_id=? ORDER BY FIELD(h.hab_estado,'habilitado','en_proceso','pendiente_renovacion','cerrado'), h.hab_servicio", [$empresaId]);
+        $pageTitle = 'Habilitación - Res 3100/2019';
+        ob_start(); require BASE_PATH . '/templates/calidad/habilitacion.php';
+        $content = ob_get_clean(); require BASE_PATH . '/templates/layout.php';
+    }
+
+    public function evaluarEstandarHabilitacion(): void {
+        $heId = (int)$_POST['he_id'];
+        $this->safeUpdate('cal_habilitacion_estandares', ['he_cumple' => $_POST['cumple'] ?? 'no', 'he_evidencia' => $_POST['evidencia'] ?? '', 'he_fecha_verificacion' => date('Y-m-d')], 'he_id = ?', [$heId]);
+        header('Location: /habilitacion?evaluado=1'); exit;
+    }
 }

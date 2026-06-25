@@ -166,6 +166,10 @@ $router->post('/calidad/rondas/crear', function () { require_once BASE_PATH.'/sr
 $router->post('/calidad/checklist/crear', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->crearChecklistItem(); });
 $router->post('/calidad/checklist/actualizar', function () { require_once BASE_PATH.'/src/Controllers/CalidadController.php'; (new CalidadController())->actualizarChecklist(); });
 $router->post('/calidad/checklist/eliminar', function () { require_once BASE_PATH.'/src/Controllers/CalidadController.php'; (new CalidadController())->eliminarChecklist(); });
+
+// ===== HABILITACION (Res 3100/2019) =====
+$router->get('/habilitacion', function () { require_once BASE_PATH.'/src/Controllers/CalidadController.php'; (new CalidadController())->habilitacionDashboard(); });
+$router->post('/habilitacion/estandar/evaluar', function () { require_once BASE_PATH.'/src/Controllers/CalidadController.php'; (new CalidadController())->evaluarEstandarHabilitacion(); });
 $router->get('/calidad/checklist', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->verChecklist(); });
 $router->post('/calidad/riesgos/crear', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->crearRiesgo(); });
 $router->get('/api/calidad/criterios-ministerio', function () { require_once BASE_PATH.'/src/Controllers/CalidadController.php'; (new CalidadController())->cargarCriteriosMinisterio(); });
