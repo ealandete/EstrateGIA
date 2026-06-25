@@ -688,7 +688,7 @@ $router->get('/api/alertas/vencimientos', function () {
     exit;
 });
 
-$router->get('/sse/dashboard', function () { require BASE_PATH . '/sse_dashboard.php'; });
+$router->get('/sse/dashboard', function () { require BASE_PATH . '/public/sse_dashboard.php'; });
 
 // ===== TEST RUNNER =====
 $router->get('/tests', function () {
