@@ -1,13 +1,17 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div class="text-muted small">Informes y reportes ambientales disponibles</div>
-    <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalReporte"><i class="fas fa-plus me-1"></i>Generar Reporte</button>
+    <div class="d-flex gap-1">
+        <?= \ExportManager::renderExportButtons('tablaReportes', 'reportes_ambiental_' . ($anio ?? date('Y'))) ?>
+        <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalReporte"><i class="fas fa-plus me-1"></i>Generar Reporte</button>
+    </div>
 </div>
+<?= \ExportManager::renderExportJS() ?>
 
 <?php if (!empty($reportes)): ?>
 <div class="card-box mb-3">
     <div class="card-box-header"><i class="fas fa-file-pdf me-2"></i>Reportes Generados (<?= count($reportes) ?>)</div>
     <div class="card-box-body p-0">
-        <table class="table-box small mb-0">
+        <table class="table-box small mb-0" id="tablaReportes">
             <thead><tr><th>Reporte</th><th>Norma</th><th>Periodo</th><th>Fecha</th><th class="text-center">Descargar</th></tr></thead>
             <tbody>
                 <?php foreach ($reportes as $rep): ?>

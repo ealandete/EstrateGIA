@@ -70,7 +70,18 @@
                         <input type="file" name="archivo" class="form-control">
                         <small class="text-muted">Formatos: PDF, DOCX, XLSX, imágenes. Máx 10MB. Se guarda en el directorio del proceso.</small>
                     </div>
-                    <textarea name="contenido" class="form-control" rows="15" placeholder="Escribe el contenido del documento. Puedes usar HTML básico para formato."></textarea>
+                    <div class="editor-toolbar mb-1">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-cmd="bold" title="Negrita"><b>B</b></button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-cmd="italic" title="Cursiva"><i>I</i></button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-cmd="underline" title="Subrayado"><u>U</u></button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-cmd="insertUnorderedList" title="Lista"><i class="fas fa-list-ul"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-cmd="insertOrderedList" title="Lista numerada"><i class="fas fa-list-ol"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-cmd="formatBlock" data-val="h2" title="Título H2">H2</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-cmd="formatBlock" data-val="h3" title="Título H3">H3</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-cmd="formatBlock" data-val="p" title="Párrafo">P</button>
+                    </div>
+                    <div id="editorWysiwyg" contenteditable="true" class="form-control" style="min-height:300px;overflow-y:auto" placeholder="Escribe el contenido del documento. Puedes usar formato."></div>
+                    <textarea name="contenido" id="editorWysiwygSource" class="d-none"></textarea>
                 </div>
             </div>
 
@@ -120,6 +131,17 @@
 </div>
 
 <script>
+document.querySelector('form').addEventListener('submit', function() {
+    document.getElementById('editorWysiwygSource').value = document.getElementById('editorWysiwyg').innerHTML;
+});
+document.querySelectorAll('.editor-toolbar button').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        var cmd = this.dataset.cmd;
+        var val = this.dataset.val || null;
+        document.execCommand(cmd, false, val);
+    });
+});
 function updateCodigo() {
     const tipo = document.getElementById('docTipo');
     const proceso = document.getElementById('docProceso');

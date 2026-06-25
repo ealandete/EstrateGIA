@@ -117,6 +117,8 @@ $faseMVCompletada = in_array($arbol[1]['fase_estado'] ?? '', ['completada','apro
         <a href="/planeacion/<?= $plan['plan_id'] ?>/editar" class="btn btn-sm btn-outline-secondary"><i class="fas fa-pen me-1"></i>Editar</a>
         <form method="POST" action="/planeacion/<?= $plan['plan_id'] ?>/eliminar" style="display:inline" onsubmit="return confirm('¿Eliminar este plan y todos sus datos? Esta acción no se puede deshacer.')"><button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash me-1"></i>Eliminar</button></form>
         <a href="/planeacion/<?= $plan['plan_id'] ?>/reporte" class="btn btn-sm btn-outline-primary ms-1"><i class="fas fa-file-pdf me-1"></i>Reporte</a>
+        <a href="/planeacion/<?= $plan['plan_id'] ?>/gantt" class="btn btn-sm btn-outline-info ms-1"><i class="fas fa-chart-gantt me-1"></i>Gantt</a>
+        <button class="btn btn-sm btn-outline-success ms-1" onclick="verificarIntegridad(<?= $plan['plan_id'] ?>)" title="Verificar integridad SHA-256"><i class="fas fa-shield-halved me-1"></i>Verificar</button>
         <span class="text-muted ms-2"><?= htmlspecialchars($plan['metodologia_nombre']) ?></span>
     </div>
 </div>
@@ -250,6 +252,22 @@ function abrirModalObjetivos() { new bootstrap.Modal(document.getElementById('mo
 function abrirReporteFases() { new bootstrap.Modal(document.getElementById('modalReporteFases')).show(); }
 function abrirModalIndicadores() { new bootstrap.Modal(document.getElementById('modalIndicadores')).show(); }
 function abrirReporteEjecutivo() { new bootstrap.Modal(document.getElementById('modalReporteEjecutivo')).show(); }
+async function verificarIntegridad(id) {
+    var btn = event.target.closest('button');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
+    try {
+        var r = await fetch('/planeacion/' + id + '/verificar-hash');
+        var j = await r.json();
+        if (j.valid) {
+            alert('✓ Integridad verificada. Hash SHA-256: ' + j.hash.substring(0,16) + '...');
+        } else {
+            alert('✗ ¡Hash no coincide! Posible alteración. Hash esperado: ' + (j.expected||'?').substring(0,16) + '...');
+        }
+    } catch(e) { alert('Error al verificar: ' + e.message); }
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-shield-halved me-1"></i>Verificar';
+}
 function editarMisionVision(tipo) {
     document.getElementById('mvTipo').value = tipo;
     document.getElementById('mvTitle').textContent = 'Editar ' + (tipo==='mision'?'Misión':'Visión');

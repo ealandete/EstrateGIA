@@ -75,6 +75,20 @@ $router->post('/planeacion/{id}/eliminar', function ($id) { require_once BASE_PA
 $router->get('/planeacion/{id}/reporte', function ($id) { require_once BASE_PATH.'/src/Controllers/PlaneacionController.php'; (new PlaneacionController())->reporte((int)$id); });
 $router->get('/planeacion/{id}/foda', function ($id) { require_once BASE_PATH.'/src/Controllers/PlaneacionController.php'; (new PlaneacionController())->foda((int)$id); });
 $router->get('/planeacion/{id}/pestel', function ($id) { require_once BASE_PATH.'/src/Controllers/PlaneacionController.php'; (new PlaneacionController())->pestel((int)$id); });
+$router->get('/planeacion/{id}/gantt', function ($id) { require_once BASE_PATH.'/src/Controllers/PlaneacionController.php'; (new PlaneacionController())->gantt((int)$id); });
+$router->get('/planeacion/{id}/verificar-hash', function ($id) {
+    Auth::guard();
+    $core = EstrateGiaCore::getInstance();
+    $plan = $core->fetchOne("SELECT * FROM plan_planes_estrategicos WHERE plan_id = :id", ['id' => (int)$id]);
+    if (!$plan) { header('Content-Type: application/json'); echo json_encode(['valid' => false, 'error' => 'Plan no encontrado']); exit; }
+    $storedHash = $plan['integrity_hash'] ?? '';
+    unset($plan['integrity_hash'], $plan['plan_id'], $plan['created_at'], $plan['updated_at']);
+    $computedHash = hash('sha256', json_encode($plan));
+    $valid = $storedHash && hash_equals($storedHash, $computedHash);
+    header('Content-Type: application/json');
+    echo json_encode(['valid' => $valid, 'hash' => $storedHash, 'expected' => $valid ? $storedHash : $computedHash]);
+    exit;
+});
 
 // ===== WORKBENCH =====
 $router->get('/workbench/{planId}/{faseId}', function ($planId, $faseId) { require_once BASE_PATH.'/src/Controllers/WorkbenchController.php'; (new WorkbenchController())->workbench((int)$planId, (int)$faseId); });
@@ -102,10 +116,12 @@ $router->get('/indicadores/ver/{id}', function ($id) { require_once BASE_PATH.'/
 $router->post('/indicadores/crear', function () { require_once BASE_PATH.'/src/Controllers/IndicadoresController.php'; (new IndicadoresController())->crear(); });
 $router->get('/indicadores/plantilla-mediciones', function () { require_once BASE_PATH.'/src/Controllers/IndicadoresController.php'; (new IndicadoresController())->plantillaMediciones(); });
 $router->post('/indicadores/carga-mediciones', function () { require_once BASE_PATH.'/src/Controllers/IndicadoresController.php'; (new IndicadoresController())->cargaMediciones(); });
-$router->get('/mediciones', function () { require_once BASE_PATH.'/src/Controllers/IndicadoresController.php'; (new IndicadoresController())->index(); });
+$router->get('/mediciones', function () { require_once BASE_PATH.'/src/Controllers/MedicionController.php'; (new MedicionController())->index(); });
 $router->post('/indicadores/meta/crear', function () { require_once BASE_PATH.'/src/Controllers/IndicadoresController.php'; (new IndicadoresController())->crearMeta(); });
-$router->post('/mediciones/registrar', function () { require_once BASE_PATH.'/src/Controllers/IndicadoresController.php'; (new IndicadoresController())->crear(); });
-$router->post('/mediciones/subir-csv', function () { require_once BASE_PATH.'/src/Controllers/IndicadoresController.php'; (new IndicadoresController())->cargaMediciones(); });
+$router->post('/mediciones/registrar', function () { require_once BASE_PATH.'/src/Controllers/MedicionController.php'; (new MedicionController())->registrar(); });
+$router->get('/mediciones/plantilla', function () { require_once BASE_PATH.'/src/Controllers/MedicionController.php'; (new MedicionController())->descargarPlantilla(); });
+$router->post('/mediciones/subir-csv', function () { require_once BASE_PATH.'/src/Controllers/MedicionController.php'; (new MedicionController())->subirCSV(); });
+$router->post('/mediciones/mineria/ejecutar', function () { require_once BASE_PATH.'/src/Controllers/MedicionController.php'; (new MedicionController())->ejecutarMineria(); });
 
 // ===== EVALUACIÓN =====
 $router->get('/evaluacion', function () { require_once BASE_PATH.'/src/Controllers/EvaluacionController.php'; (new EvaluacionController())->index(); });
@@ -160,7 +176,26 @@ $router->get('/documentos/crear', function () { require_once BASE_PATH.'/src/Con
 $router->post('/documentos/store', function () { require_once BASE_PATH.'/src/Controllers/DocumentosController.php'; (new DocumentosController())->store(); });
 $router->get('/documentos/ver/{id}', function ($id) { require_once BASE_PATH.'/src/Controllers/DocumentosController.php'; (new DocumentosController())->ver((int)$id); });
 $router->get('/documentos/aprobar/{id}', function ($id) { require_once BASE_PATH.'/src/Controllers/DocumentosController.php'; (new DocumentosController())->aprobar((int)$id); });
+$router->post('/documentos/rechazar/{id}', function ($id) { require_once BASE_PATH.'/src/Controllers/DocumentosController.php'; (new DocumentosController())->rechazar((int)$id); });
+$router->post('/documentos/solicitar-revision/{id}', function ($id) { require_once BASE_PATH.'/src/Controllers/DocumentosController.php'; (new DocumentosController())->solicitarRevision((int)$id); });
 $router->post('/documentos/nueva-version/{id}', function ($id) { require_once BASE_PATH.'/src/Controllers/DocumentosController.php'; (new DocumentosController())->nuevaVersion((int)$id); });
+$router->post('/documentos/firmar/{id}', function ($id) {
+    Auth::guard();
+    $core = EstrateGiaCore::getInstance();
+    $userId = Auth::userId();
+    $userName = Auth::userName();
+    $userCargo = Auth::userCargo();
+    $firma = hash('sha256', $id . '|' . $userId . '|' . date('c') . '|' . ($_SERVER['REMOTE_ADDR'] ?? ''));
+    $fecha = date('Y-m-d H:i:s');
+    $core->execute(
+        "UPDATE doc_documentos SET documento_firma_hash = :fh, documento_firmado_por = :fp, documento_firmado_fecha = :ff, documento_firmado_cargo = :fc WHERE documento_id = :id",
+        ['fh' => $firma, 'fp' => $userId, 'ff' => $fecha, 'fc' => $userCargo, 'id' => (int)$id]
+    );
+    $core->audit('firma_documento', 'doc_documentos', (int)$id, null, ['firma' => $firma, 'firmado_por' => $userId], 'Firma electrónica');
+    header('Content-Type: application/json');
+    echo json_encode(['success' => true, 'firma' => $firma, 'fecha' => $fecha, 'firmado_por' => $userName]);
+    exit;
+});
 
 // ===== SST =====
 $router->get('/sst', function () { require_once BASE_PATH.'/src/Controllers/SSTController.php'; (new SSTController())->index(); });
@@ -319,13 +354,14 @@ $router->get('/documentacion', function () {
 // ===== SWAGGER UI =====
 $router->get('/docs', function () {
     header('Content-Type: text/html; charset=UTF-8');
+    $openapiPath = BASE_PATH . '/docs/openapi.json';
     echo '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>EstrateGIA API Docs</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css">
-    <style>body{margin:0;background:#f8fafc}.topbar{background:#1a73e8;color:#fff;padding:12px 24px;font-size:1.2rem}</style></head><body>
-    <div class="topbar">EstrateGIA API v2.1</div>
+    <style>body{margin:0;background:#f8fafc}.topbar{background:#1a73e8;color:#fff;padding:12px 24px;font-size:1.2rem;display:flex;justify-content:space-between;align-items:center}.topbar a{color:#fff;font-size:0.8rem;text-decoration:underline}</style></head><body>
+    <div class="topbar"><span><i class="fas fa-book"></i> EstrateGIA API v2.1</span><a href="/docs/openapi.json" target="_blank">openapi.json</a></div>
     <div id="swagger-ui"></div>
     <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
-    <script>SwaggerUIBundle({url:"/docs/openapi.json",dom_id:"#swagger-ui",deepLinking:true,defaultModelsExpandDepth:-1})</script></body></html>';
+    <script>SwaggerUIBundle({url:"/docs/openapi.json",dom_id:"#swagger-ui",deepLinking:true,defaultModelsExpandDepth:-1,defaultModelExpandDepth:2})</script></body></html>';
     exit;
 });
 
@@ -339,12 +375,69 @@ $router->post('/tools/save-comentario', function () {
     exit;
 });
 
+// ===== KANBAN =====
+$router->get('/tools/kanban', function () {
+    Auth::guard();
+    $core = EstrateGiaCore::getInstance();
+    $planId = (int)($_GET['plan_id'] ?? ($_COOKIE['plan_activo'] ?? 0));
+    $actividades = $core->fetchAll(
+        "SELECT * FROM plan_kanban WHERE kanban_plan_id = :pid ORDER BY kanban_orden ASC, created_at DESC",
+        ['pid' => $planId]
+    );
+    $core->execute("CREATE TABLE IF NOT EXISTS plan_kanban (
+        kanban_id INT AUTO_INCREMENT PRIMARY KEY,
+        kanban_plan_id INT NOT NULL,
+        kanban_titulo VARCHAR(255) NOT NULL,
+        kanban_descripcion TEXT,
+        kanban_estado VARCHAR(30) DEFAULT 'pendiente',
+        kanban_responsable VARCHAR(150),
+        kanban_fecha_limite DATE,
+        kanban_orden INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX (kanban_plan_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    $pageTitle = 'Tablero Kanban';
+    ob_start();
+    require BASE_PATH . '/templates/tools/kanban.php';
+    $content = ob_get_clean();
+    require BASE_PATH . '/templates/layout.php';
+});
+$router->post('/tools/kanban/guardar', function () {
+    Auth::guard();
+    $core = EstrateGiaCore::getInstance();
+    $planId = (int)($_POST['plan_id'] ?? ($_COOKIE['plan_activo'] ?? 0));
+    $core->insert('plan_kanban', [
+        'kanban_plan_id' => $planId,
+        'kanban_titulo' => $_POST['titulo'] ?? '',
+        'kanban_descripcion' => $_POST['descripcion'] ?? '',
+        'kanban_estado' => $_POST['estado'] ?? 'pendiente',
+        'kanban_responsable' => $_POST['responsable'] ?? '',
+        'kanban_fecha_limite' => $_POST['fecha_limite'] ?? null,
+    ]);
+    header('Location: /tools/kanban?plan_id=' . $planId . '&ok=1');
+    exit;
+});
+$router->post('/tools/kanban/mover', function () {
+    Auth::guard();
+    $core = EstrateGiaCore::getInstance();
+    $id = (int)($_POST['id']);
+    $estado = $_POST['estado'] ?? 'pendiente';
+    $core->execute("UPDATE plan_kanban SET kanban_estado = :e WHERE kanban_id = :id", ['e' => $estado, 'id' => $id]);
+    header('Content-Type: application/json');
+    echo json_encode(['success' => true]);
+    exit;
+});
+
 // ===== POWER BI / ANALÍTICA =====
 $router->get('/api/powerbi', function () {
     require_once BASE_PATH.'/lib/PlanManager.php';
     require_once BASE_PATH.'/lib/IndicatorManager.php';
+    require_once BASE_PATH.'/lib/SSTManager.php';
+    require_once BASE_PATH.'/lib/AmbientalManager.php';
     $planId = (int)($_GET['plan_id'] ?? 5);
+    $empresaId = (int)($_GET['empresa_id'] ?? 2);
     $pm = new PlanManager(); $im = new IndicatorManager();
+    $sm = new SSTManager(); $am = new AmbientalManager();
     $objs = $pm->getObjetivos($planId);
     $inds = $im->getIndicadores($planId);
     $data = [];
@@ -352,6 +445,7 @@ $router->get('/api/powerbi', function () {
         $kpis = array_filter($inds, fn($i) => (int)($i['indicador_objetivo_id']??0) === (int)$o['objetivo_id']);
         foreach ($kpis as $k) {
             $data[] = [
+                'Tipo' => 'Indicador',
                 'Perspectiva' => $o['objetivo_perspectiva'],
                 'Objetivo' => $o['objetivo_nombre'],
                 'Indicador' => $k['indicador_nombre'],
@@ -361,6 +455,32 @@ $router->get('/api/powerbi', function () {
                 'Frecuencia' => $k['indicador_frecuencia_medicion'] ?? 'mensual'
             ];
         }
+    }
+    $sstInds = $sm->getIndicadores($empresaId);
+    foreach ($sstInds as $si) {
+        $data[] = [
+            'Tipo' => 'SST',
+            'Perspectiva' => 'Seguridad y Salud',
+            'Objetivo' => 'Seguridad y Salud en el Trabajo',
+            'Indicador' => $si['sst_ind_nombre'] ?? ($si['indicador_nombre'] ?? ''),
+            'Formula' => $si['sst_ind_formula'] ?? '',
+            'Unidad' => $si['sst_ind_unidad'] ?? '',
+            'Meta' => (float)($si['sst_ind_meta'] ?? 0),
+            'Frecuencia' => $si['sst_ind_frecuencia'] ?? 'mensual'
+        ];
+    }
+    $ambInds = $am->getIndicadores($empresaId);
+    foreach ($ambInds as $ai) {
+        $data[] = [
+            'Tipo' => 'Ambiental',
+            'Perspectiva' => 'Ambiental',
+            'Objetivo' => 'Gestión Ambiental',
+            'Indicador' => $ai['amb_ind_nombre'] ?? ($ai['indicador_nombre'] ?? ''),
+            'Formula' => $ai['amb_ind_formula'] ?? '',
+            'Unidad' => $ai['amb_ind_unidad'] ?? '',
+            'Meta' => (float)($ai['amb_ind_meta'] ?? 0),
+            'Frecuencia' => $ai['amb_ind_frecuencia'] ?? 'mensual'
+        ];
     }
     $format = $_GET['format'] ?? 'json';
     if ($format === 'csv') {
@@ -381,6 +501,12 @@ $router->get('/login', function () {
     exit;
 });
 
+// ===== PORTAL PROVEEDOR (acceso publico) =====
+$router->get('/portal-proveedor', function () {
+    require BASE_PATH . '/public/portal-proveedor.php';
+    exit;
+});
+
 // ===== OTROS MÓDULOS =====
 $router->get('/', function () { require_once BASE_PATH.'/src/Controllers/SIGController.php'; (new SIGController())->index(); });
 $router->get('/sig', function () { require_once BASE_PATH.'/src/Controllers/SIGController.php'; (new SIGController())->index(); });
@@ -395,6 +521,7 @@ $router->get('/satisfaccion', function () { require_once BASE_PATH.'/src/Control
 $router->get('/extras/satisfaccion', function () { require_once BASE_PATH.'/src/Controllers/ExtrasController.php'; (new ExtrasController())->satisfaccion(); });
 $router->post('/satisfaccion/crear', function () { require_once BASE_PATH.'/src/Controllers/ExtrasController.php'; (new ExtrasController())->crearSatisfaccion(); });
 $router->get('/crm', function () { require_once BASE_PATH.'/src/Controllers/CRMController.php'; (new CRMController())->index(); });
+$router->get('/crm/mineria', function () { require_once BASE_PATH.'/src/Controllers/MedicionController.php'; (new MedicionController())->mineria(); });
 $router->post('/crm/conexion/crear', function () { require_once BASE_PATH.'/src/Controllers/IntegracionesController.php'; (new IntegracionesController())->crearConexion(); });
 
 // ===== LICENCIAS =====
@@ -432,7 +559,13 @@ $router->get('/descargar-doc/{dir}/{file}', function ($dir, $file) {
 });
 $router->get('/docs/openapi.json', function () {
     header('Content-Type: application/json');
-    echo json_encode(['openapi'=>'3.0.0','info'=>['title'=>'EstrateGIA API','version'=>'2.1'],'paths'=>['/planeacion'=>['get'=>['summary'=>'Listar planes']],'/indicadores'=>['get'=>['summary'=>'Dashboard KPIs']],'/generar'=>['post'=>['summary'=>'Generar IA']],'/sst'=>['get'=>['summary'=>'Dashboard SST']],'/ambiental'=>['get'=>['summary'=>'Dashboard Ambiental']],'/calidad'=>['get'=>['summary'=>'Dashboard Calidad']]]], JSON_PRETTY_PRINT);
+    $path = BASE_PATH . '/docs/openapi.json';
+    if (file_exists($path)) {
+        header('Content-Length: ' . filesize($path));
+        readfile($path);
+    } else {
+        echo json_encode(['openapi'=>'3.0.0','info'=>['title'=>'EstrateGIA API','version'=>'2.1'],'paths'=>['/planeacion'=>['get'=>['summary'=>'Listar planes']],'/indicadores'=>['get'=>['summary'=>'Dashboard KPIs']],'/generar'=>['post'=>['summary'=>'Generar IA']],'/sst'=>['get'=>['summary'=>'Dashboard SST']],'/ambiental'=>['get'=>['summary'=>'Dashboard Ambiental']],'/calidad'=>['get'=>['summary'=>'Dashboard Calidad']]]], JSON_PRETTY_PRINT);
+    }
     exit;
 });
 

@@ -6,6 +6,58 @@
     </div>
 </div>
 
+<?php
+$probMap = ['baja' => 1, 'media' => 3, 'alta' => 5];
+$consMap = ['leve' => 1, 'moderada' => 3, 'grave' => 5];
+$nivelMap = [
+    1 => ['label'=>'Aceptable','color'=>'#16a34a'],
+    3 => ['label'=>'Moderado','color'=>'#facc15'],
+    5 => ['label'=>'Importante','color'=>'#f97316'],
+    9 => ['label'=>'Importante','color'=>'#f97316'],
+    15 => ['label'=>'Inaceptable','color'=>'#dc2626'],
+    25 => ['label'=>'Inaceptable','color'=>'#dc2626'],
+];
+$probs = ['baja','media','alta'];
+$conses = ['leve','moderada','grave'];
+$heatmap = [];
+foreach ($peligros as $p) {
+    $pv = $probMap[$p['peligro_probabilidad'] ?? 'baja'] ?? 1;
+    $cv = $consMap[$p['peligro_consecuencia'] ?? 'leve'] ?? 1;
+    $score = $pv * $cv;
+    $key = ($p['peligro_probabilidad'] ?? 'baja') . '|' . ($p['peligro_consecuencia'] ?? 'leve');
+    $heatmap[$key] = ($heatmap[$key] ?? 0) + 1;
+}
+?>
+<div class="card-box mb-3">
+    <div class="card-box-header"><i class="fas fa-th me-2"></i>Matriz IPVR 5x5 — Probabilidad × Consecuencia</div>
+    <div class="card-box-body">
+        <table class="table-box small mb-0 text-center">
+            <thead><tr><th style="width:80px">Prob &darr; / Cons &rarr;</th>
+                <?php foreach ($conses as $c): $cl = $consMap[$c]; ?>
+                <th style="width:100px"><?= ucfirst($c) ?> (<?= $cl ?>)</th>
+                <?php endforeach; ?>
+            </tr></thead>
+            <tbody>
+                <?php foreach ($probs as $p): $pl = $probMap[$p]; ?>
+                <tr>
+                    <td><strong><?= ucfirst($p) ?> (<?= $pl ?>)</strong></td>
+                    <?php foreach ($conses as $c): $cl = $consMap[$c]; $score = $pl * $cl;
+                        $ni = $nivelMap[$score] ?? ['label'=>'?','color'=>'#ccc'];
+                        $cnt = $heatmap[$p . '|' . $c] ?? 0;
+                        $alpha = $cnt > 0 ? 0.3 + min(0.7, $cnt * 0.1) : 0.15;
+                    ?>
+                    <td style="background:<?= $ni['color'] ?>;opacity:<?= $alpha ?>;padding:12px">
+                        <div style="font-size:1.5rem;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.4)"><?= $cnt ?></div>
+                        <div style="font-size:0.6rem;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.3)"><?= $ni['label'] ?></div>
+                    </td>
+                    <?php endforeach; ?>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
 <div class="card-box">
     <div class="card-box-body p-0">
     <?php if (empty($peligros)): ?>

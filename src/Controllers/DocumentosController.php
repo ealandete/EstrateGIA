@@ -166,13 +166,45 @@ class DocumentosController {
 
     public function aprobar(int $id): void {
         (new DocManager())->aprobarDocumento($id, Auth::userId());
-        EstrateGiaCore::getInstance()->logAction(Auth::userId(), 'aprobar', 'documentacion', 'documento', $id);
+        $this->core->logAction(Auth::userId(), 'aprobar', 'documentacion', 'documento', $id);
+        $this->core->audit('aprobar', 'doc_documentos', $id, null, ['documento_estado' => 'aprobado'],
+            'Documento aprobado por ' . Auth::userId());
         header('Location: /documentos?approved=1'); exit;
     }
 
     public function publicar(int $id): void {
         (new DocManager())->publicarDocumento($id);
         header('Location: /documentos?published=1'); exit;
+    }
+
+    public function rechazar(int $id): void {
+        $dm = new DocManager();
+        $doc = $dm->getDocumento($id);
+        $comentario = $_POST['comentario'] ?? 'Rechazado sin comentario';
+        $this->core->execute(
+            "UPDATE doc_documentos SET documento_estado = 'rechazado', documento_comentario = CONCAT(IFNULL(documento_comentario,''), CHAR(10), ?) WHERE documento_id = ?",
+            ["[" . date('Y-m-d H:i') . " por " . Auth::userId() . "] " . $comentario, $id]
+        );
+        $this->core->audit('rechazar', 'doc_documentos', $id,
+            ['documento_estado' => $doc['documento_estado'] ?? 'borrador'],
+            ['documento_estado' => 'rechazado'],
+            'Documento rechazado: ' . $comentario);
+        header('Location: /documentos/ver/' . $id . '?rejected=1'); exit;
+    }
+
+    public function solicitarRevision(int $id): void {
+        $dm = new DocManager();
+        $doc = $dm->getDocumento($id);
+        $comentario = $_POST['comentario'] ?? 'Solicitud de revisión';
+        $this->core->execute(
+            "UPDATE doc_documentos SET documento_estado = 'revision', documento_comentario = CONCAT(IFNULL(documento_comentario,''), CHAR(10), ?) WHERE documento_id = ?",
+            ["[" . date('Y-m-d H:i') . " por " . Auth::userId() . "] " . $comentario, $id]
+        );
+        $this->core->audit('solicitar_revision', 'doc_documentos', $id,
+            ['documento_estado' => $doc['documento_estado'] ?? 'borrador'],
+            ['documento_estado' => 'revision'],
+            'Revisión solicitada: ' . $comentario);
+        header('Location: /documentos/ver/' . $id . '?review=1'); exit;
     }
 
     public function nuevaVersion(int $id): void {

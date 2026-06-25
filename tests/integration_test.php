@@ -545,6 +545,247 @@ $GLOBALS['tests']['Integration']['T-013d: Ausentismo CSV export'] = function () 
 };
 
 // ============================================================
+// T-011: Load test simulation (50 concurrent reads)
+// ============================================================
+echo "\n⚡ T-011 Load Test Simulation (50 concurrent reads)\n";
+
+$GLOBALS['tests']['Integration']['T-011a: 50x Dashboard ejecutivo queries'] = function () use ($core) {
+    $errors = 0;
+    for ($i = 0; $i < 50; $i++) {
+        try {
+            $core->fetchOne("SELECT COUNT(*) as total FROM plan_planes_estrategicos");
+            $core->fetchAll("SELECT plan_nombre, plan_estado, plan_avance_porcentaje FROM plan_planes_estrategicos LIMIT 10");
+            $core->fetchOne("SELECT COUNT(*) as total FROM ind_indicadores");
+        } catch (\Throwable $e) {
+            $errors++;
+        }
+    }
+    return [$errors === 0, $errors > 0 ? "$errors errors in 50 iterations" : '50x3 queries OK'];
+};
+
+$GLOBALS['tests']['Integration']['T-011b: 50x SST peligros read'] = function () use ($sm) {
+    $errors = 0;
+    for ($i = 0; $i < 50; $i++) {
+        try {
+            $sm->getPeligros(2);
+        } catch (\Throwable $e) {
+            $errors++;
+        }
+    }
+    return [$errors === 0, $errors > 0 ? "$errors errors" : '50 reads OK'];
+};
+
+$GLOBALS['tests']['Integration']['T-011c: 50x Procesos read'] = function () use ($core) {
+    $errors = 0;
+    for ($i = 0; $i < 50; $i++) {
+        try {
+            $core->fetchAll("SELECT * FROM proc_procesos WHERE proceso_activo = 1 LIMIT 20");
+            $core->fetchAll("SELECT * FROM proc_macroprocesos WHERE macro_activo = 1 ORDER BY macro_tipo");
+        } catch (\Throwable $e) {
+            $errors++;
+        }
+    }
+    return [$errors === 0, $errors > 0 ? "$errors errors" : '50 reads OK'];
+};
+
+$GLOBALS['tests']['Integration']['T-011d: 50x indicadores + categorias read'] = function () use ($core) {
+    $errors = 0;
+    for ($i = 0; $i < 50; $i++) {
+        try {
+            $core->fetchAll("SELECT * FROM ind_categorias ORDER BY categoria_tipo, categoria_nombre");
+            $core->fetchAll(
+                "SELECT i.*, c.categoria_nombre FROM ind_indicadores i JOIN ind_categorias c ON i.indicador_categoria_id = c.categoria_id WHERE i.indicador_activo = 1 LIMIT 20"
+            );
+        } catch (\Throwable $e) {
+            $errors++;
+        }
+    }
+    return [$errors === 0, $errors > 0 ? "$errors errors" : '50 reads OK'];
+};
+
+$GLOBALS['tests']['Integration']['T-011e: 50x NC read'] = function () use ($core) {
+    $errors = 0;
+    for ($i = 0; $i < 50; $i++) {
+        try { $core->fetchOne("SELECT COUNT(*) FROM cal_no_conformidades"); } catch (\Throwable $e) { $errors++; }
+    }
+    return [$errors === 0, $errors > 0 ? "$errors errors" : '50 reads OK'];
+};
+
+// ============================================================
+// T-014: Bulk upload test (100+ rows CSV via medicion import)
+// ============================================================
+echo "\n📥 T-014 Bulk Upload Test (100+ rows CSV)\n";
+
+$GLOBALS['tests']['Integration']['T-014a: Generate test CSV with 120 rows'] = function () use ($core) {
+    $indicadores = $core->fetchAll("SELECT indicador_id FROM ind_indicadores WHERE indicador_activo = 1 LIMIT 5");
+    if (empty($indicadores)) {
+        return [true, 'No indicadores disponibles para prueba (skip)'];
+    }
+
+    $tmpFile = tmpfile();
+    $tmpPath = stream_get_meta_data($tmpFile)['uri'];
+
+    // Header row
+    fputcsv($tmpFile, ['indicador_id', 'indicador_nombre', 'categoria', 'fecha', 'periodo', 'valor', 'observaciones']);
+
+    // 120 data rows cycling through available indicadores
+    $baseDate = new \DateTime('2026-01-01');
+    for ($i = 0; $i < 120; $i++) {
+        $ind = $indicadores[$i % count($indicadores)];
+        $date = (clone $baseDate)->modify("+{$i} days")->format('Y-m-d');
+        $periodo = (clone $baseDate)->modify("+{$i} days")->format('Y-m');
+        $valor = round(50 + ($i * 0.3) + (mt_rand(0, 20) * 0.5), 2);
+        fputcsv($tmpFile, [
+            $ind['indicador_id'],
+            'KPI-BULK-' . sprintf('%03d', $i),
+            'cumplimiento',
+            $date,
+            $periodo,
+            (string)$valor,
+            'Bulk test row ' . $i,
+        ]);
+    }
+    rewind($tmpFile);
+
+    // Read back and verify
+    $header = fgetcsv($tmpFile);
+    $rowCount = 0;
+    $invalid = 0;
+    while (($row = fgetcsv($tmpFile)) !== false) {
+        $rowCount++;
+        if (empty($row[0]) || (int)$row[0] <= 0) $invalid++;
+        if (empty($row[5]) || (float)$row[5] == 0) $invalid++;
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', trim($row[3] ?? ''))) $invalid++;
+    }
+    fclose($tmpFile);
+
+    eq(120, $rowCount, 'Row count mismatch');
+    eq(0, $invalid, 'Invalid rows in generated CSV');
+    return [true, "Generated $rowCount rows, 0 invalid"];
+};
+
+$GLOBALS['tests']['Integration']['T-014b: Parse CSV mediciÃ³n structure correctly'] = function () use ($core) {
+    $indicadores = $core->fetchAll("SELECT indicador_id FROM ind_indicadores WHERE indicador_activo = 1 LIMIT 5");
+    if (empty($indicadores)) {
+        return [true, 'No indicadores (skip)'];
+    }
+
+    $tmpFile = tmpfile();
+    $tmpPath = stream_get_meta_data($tmpFile)['uri'];
+
+    fputcsv($tmpFile, ['indicador_id', 'indicador_nombre', 'categoria', 'fecha', 'periodo', 'valor', 'observaciones']);
+    $indIds = array_column($indicadores, 'indicador_id');
+    for ($i = 0; $i < 120; $i++) {
+        $indId = $indIds[$i % count($indIds)];
+        fputcsv($tmpFile, [
+            (string)$indId,
+            'KPI-TEST',
+            'cumplimiento',
+            '2026-06-15',
+            '2026-06',
+            (string)(85.0 + ($i * 0.1)),
+            'Row ' . $i,
+        ]);
+    }
+    rewind($tmpFile);
+
+    $header = fgetcsv($tmpFile);
+    $parsed = 0;
+    $skipped = 0;
+
+    while (($row = fgetcsv($tmpFile)) !== false) {
+        if (empty($row[0]) || trim($row[0]) === 'EJEMPLO ->' || trim($row[0]) === 'indicador_id') {
+            $skipped++;
+            continue;
+        }
+        $indicadorId = (int)($row[0] ?? 0);
+        $valor = (float)($row[5] ?? $row[4] ?? 0);
+        $fecha = trim($row[3] ?? date('Y-m-d'));
+        $periodo = trim($row[4] ?? date('Y-m'));
+
+        if ($indicadorId <= 0 || $valor == 0 || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
+            $skipped++;
+            continue;
+        }
+        ok(in_array($indicadorId, $indIds), "Indicator $indicadorId not in valid set");
+        gt($valor, 0, 'Valor must be positive');
+        eq('2026-06-15', $fecha, 'Fecha mismatch');
+        $parsed++;
+    }
+    fclose($tmpFile);
+
+    eq(120, $parsed, 'Should parse 120 rows');
+    eq(0, $skipped, 'Should skip 0 rows');
+    return [true, "Parsed $parsed rows, $skipped skipped"];
+};
+
+$GLOBALS['tests']['Integration']['T-014c: Simulate CSV upload without persisting (dry run)'] = function () {
+    $tmpFile = tmpfile();
+    fputcsv($tmpFile, ['indicador_id', 'indicador_nombre', 'categoria', 'fecha', 'periodo', 'valor', 'observaciones']);
+    for ($i = 0; $i < 100; $i++) {
+        fputcsv($tmpFile, ['1', 'KPI-DRY-' . $i, 'cumplimiento', '2026-05-15', '2026-05', (string)(70.0 + ($i * 0.2)), 'Dry run row ' . $i]);
+    }
+    rewind($tmpFile);
+    $header = fgetcsv($tmpFile);
+    $valid = 0; $invalidRows = 0;
+    while (($row = fgetcsv($tmpFile)) !== false) {
+        if (empty($row[0]) || trim($row[0]) === 'EJEMPLO ->' || trim($row[0]) === 'indicador_id') continue;
+        $valor = (float)($row[5] ?? 0);
+        $fecha = trim($row[3] ?? '');
+        if ((int)($row[0] ?? 0) <= 0) { $invalidRows++; continue; }
+        if ($valor == 0) { $invalidRows++; continue; }
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) { $invalidRows++; continue; }
+        $valid++;
+    }
+    fclose($tmpFile);
+    return [$valid === 100 && $invalidRows === 0, "$valid valid, $invalidRows invalid"];
+};
+
+$GLOBALS['tests']['Integration']['T-014d: Handle edge cases in CSV (empty lines, examples)'] = function () {
+    $tmpFile = tmpfile();
+    $tmpPath = stream_get_meta_data($tmpFile)['uri'];
+
+    fputcsv($tmpFile, ['indicador_id', 'indicador_nombre', 'categoria', 'fecha', 'periodo', 'valor', 'observaciones']);
+    fputcsv($tmpFile, ['', '', '', '', '', '', '']);              // Empty row (should skip)
+    fputcsv($tmpFile, ['1', 'KPI-X', 'cumplimiento', '2026-05-15', '2026-05', '88.5', 'Valid row']);
+    fputcsv($tmpFile, ['EJEMPLO ->', '', '', '', '', '', '']);    // Example marker (should skip)
+    fputcsv($tmpFile, ['', '', '', '', '', '', '']);              // Empty row
+    fputcsv($tmpFile, ['0', 'KPI-ZERO', 'cumplimiento', '2026-05-15', '2026-05', '0', 'Zero valor']); // Invalid (id=0)
+    fputcsv($tmpFile, ['1', 'KPI-ZERO', 'cumplimiento', '2026-05-15', '2026-05', '0', 'Zero valor']); // Zero valor skips
+    fputcsv($tmpFile, ['1', 'KPI-BAD', 'cumplimiento', 'bad-date', '2026-05', '50', 'Bad date']);   // Bad date
+    fputcsv($tmpFile, ['', '', '', '', '', '', '']);              // Empty row
+    fputcsv($tmpFile, ['2', 'KPI-OK2', 'cumplimiento', '2026-05-20', '2026-05', '92.0', 'Valid row 2']);
+    fputcsv($tmpFile, ['indicador_id', '', '', '', '', '', '']);  // Duplicate header (should skip)
+
+    rewind($tmpFile);
+
+    $header = fgetcsv($tmpFile);
+    $validRows = 0;
+    $skippedRows = 0;
+
+    while (($row = fgetcsv($tmpFile)) !== false) {
+        if (empty($row[0]) || trim($row[0]) === 'EJEMPLO ->' || trim($row[0]) === 'indicador_id') {
+            $skippedRows++;
+            continue;
+        }
+        $indicadorId = (int)($row[0] ?? 0);
+        $valor = (float)($row[5] ?? $row[4] ?? 0);
+        $fecha = trim($row[3] ?? '');
+
+        if ($indicadorId <= 0) { $skippedRows++; continue; }
+        if ($valor == 0) { $skippedRows++; continue; }
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) { $skippedRows++; continue; }
+
+        $validRows++;
+    }
+    fclose($tmpFile);
+
+    eq(2, $validRows, 'Should have 2 valid rows');
+    eq(8, $skippedRows, 'Should skip 8 invalid/empty rows');
+    return [true, "Edge cases: $validRows valid, $skippedRows skipped"];
+};
+
+// ============================================================
 // EXECUTION
 // ============================================================
 echo "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";

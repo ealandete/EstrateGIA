@@ -1,35 +1,44 @@
 <div class="row g-3 mb-3">
     <div class="col-md-3">
-        <div class="stat-card">
+        <a href="?seccion=registros" class="text-decoration-none">
+        <div class="stat-card drill-card">
             <div class="stat-label">Consumo de Agua <?= $anio ?></div>
             <div class="stat-value"><?= number_format($estadisticas['agua'] ?? 0, 0) ?> m&sup3;</div>
             <small class="text-muted">Total anual</small>
         </div>
+        </a>
     </div>
     <div class="col-md-3">
-        <div class="stat-card">
+        <a href="?seccion=registros" class="text-decoration-none">
+        <div class="stat-card drill-card">
             <div class="stat-label">Consumo de Energ&iacute;a</div>
             <div class="stat-value"><?= number_format($estadisticas['energia'] ?? 0, 0) ?> kWh</div>
             <small class="text-muted">Total anual</small>
         </div>
+        </a>
     </div>
     <div class="col-md-3">
-        <div class="stat-card">
+        <a href="?seccion=huella" class="text-decoration-none">
+        <div class="stat-card drill-card">
             <div class="stat-label">Huella de Carbono</div>
             <div class="stat-value"><?= number_format($huellaCarbono['total'] ?? 0, 2) ?> tCO<sub>2</sub>e</div>
             <small class="<?= ($huellaCarbono['variacion'] ?? 0) > 0 ? 'text-danger' : 'text-success' ?>">
                 <?= ($huellaCarbono['variacion'] ?? 0) >= 0 ? '+' : '' ?><?= number_format($huellaCarbono['variacion'] ?? 0, 1) ?>% vs <?= $anio - 1 ?>
             </small>
         </div>
+        </a>
     </div>
     <div class="col-md-3">
-        <div class="stat-card">
+        <a href="?seccion=aspectos" class="text-decoration-none">
+        <div class="stat-card drill-card">
             <div class="stat-label">Aspectos Identificados</div>
             <div class="stat-value"><?= $estadisticas['aspectos'] ?? 0 ?></div>
             <small class="text-muted"><?= $estadisticas['controles'] ?? 0 ?> controles activos</small>
         </div>
+        </a>
     </div>
 </div>
+<style>.drill-card{cursor:pointer;transition:all 0.2s}.drill-card:hover{transform:translateY(-3px);box-shadow:0 4px 16px rgba(0,0,0,0.12)}</style>
 
 <div class="row g-3 mb-3">
     <div class="col-md-3">

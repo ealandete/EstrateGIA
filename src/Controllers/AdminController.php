@@ -25,6 +25,7 @@ class AdminController {
              JOIN sys_roles r ON u.usuario_rol_id = r.rol_id
              LEFT JOIN sys_usuario_empresa ue ON u.usuario_id = ue.ue_usuario_id
              LEFT JOIN plan_empresas e ON ue.ue_empresa_id = e.empresa_id AND e.empresa_activo = 1
+             WHERE u.usuario_activo = 1
              GROUP BY u.usuario_id
              ORDER BY u.usuario_nombre'
         );
@@ -47,7 +48,10 @@ class AdminController {
                 'usuario_cargo' => $_POST['cargo'] ?? '',
                 'usuario_departamento' => $_POST['departamento'] ?? '',
             ]);
-            (EstrateGiaCore::getInstance())->logAction(Auth::userId(), 'crear', 'usuarios', 'usuario', $userId); 
+            (EstrateGiaCore::getInstance())->logAction(Auth::userId(), 'crear', 'usuarios', 'usuario', $userId);
+            (EstrateGiaCore::getInstance())->audit('crear', 'sys_usuarios', $userId, null,
+                ['usuario_email' => $_POST['email'], 'usuario_nombre' => $_POST['nombre'], 'usuario_rol_id' => (int)$_POST['rol_id']],
+                'Usuario creado por admin');
             header('Location: /admin/usuarios?created=1');
         } catch (Exception $e) {
             header('Location: /admin/usuarios?error=' . urlencode($e->getMessage()));

@@ -13,6 +13,7 @@ class ProveedoresManager {
         $params = ['eid' => $empresaId];
         if ($tipo) { $sql .= " AND p.prov_tipo = :tipo"; $params['tipo'] = $tipo; }
         if ($estado) { $sql .= " AND p.prov_estado = :estado"; $params['estado'] = $estado; }
+        else { $sql .= " AND p.prov_estado = 'activo'"; }
         if ($buscar) { $sql .= " AND (p.prov_nombre LIKE :buscar OR p.prov_codigo LIKE :buscar)"; $params['buscar'] = "%$buscar%"; }
         $sql .= " ORDER BY p.prov_calificacion DESC";
         return $this->core->paginate($sql, $params, $page, $perPage);

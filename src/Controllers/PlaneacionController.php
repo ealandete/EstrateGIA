@@ -42,7 +42,7 @@ class PlaneacionController {
 
     public function store(): void {
         try {
-            $id = $this->pm->createPlan([
+            $data = [
                 'plan_empresa_id'     => (int)$_POST['empresa_id'],
                 'plan_metodologia_id' => (int)$_POST['metodologia_id'],
                 'plan_nombre'         => $_POST['nombre'],
@@ -53,7 +53,9 @@ class PlaneacionController {
                 'plan_presupuesto_total' => $_POST['presupuesto'] ? (float)$_POST['presupuesto'] : null,
                 'plan_responsable_id' => Auth::userId(),
                 'usuario_id'          => Auth::userId(),
-            ]);
+            ];
+            $data['integrity_hash'] = hash('sha256', json_encode($data));
+            $id = $this->pm->createPlan($data);
             header('Location: /planeacion/' . $id . '?created=1');
         } catch (Exception $e) {
             header('Location: /planeacion/crear?error=' . urlencode($e->getMessage()));
@@ -129,6 +131,20 @@ class PlaneacionController {
         require BASE_PATH . '/templates/layout.php';
     }
 
+    public function gantt(int $id): void {
+        $plan = $this->pm->getPlan($id);
+        if (!$plan) { http_response_code(404); echo 'Plan no encontrado'; return; }
+        $arbol = $this->pm->getPlanTree($id);
+        $fasesCompletadas = 0;
+        foreach ($arbol as $f) if (in_array($f['fase_estado']??'', ['completada','aprobada'])) $fasesCompletadas++;
+        $avanceReal = count($arbol) > 0 ? min(100, round($fasesCompletadas / count($arbol) * 100)) : 0;
+        $pageTitle = 'Gantt: ' . htmlspecialchars($plan['plan_nombre']);
+        ob_start();
+        require BASE_PATH . '/templates/planeacion/gantt.php';
+        $content = ob_get_clean();
+        require BASE_PATH . '/templates/layout.php';
+    }
+
     public function edit(int $id): void {
         $plan = $this->pm->getPlan($id);
         if (!$plan) { header('Location: /planeacion'); exit; }
@@ -140,14 +156,16 @@ class PlaneacionController {
     }
 
     public function update(int $id): void {
-        $this->pm->updatePlan($id, [
+        $data = [
             'plan_nombre' => $_POST['nombre'] ?? '',
             'plan_descripcion' => $_POST['descripcion'] ?? '',
             'plan_fecha_inicio' => $_POST['fecha_inicio'] ?? null,
             'plan_fecha_fin' => $_POST['fecha_fin'] ?? null,
             'plan_presupuesto_total' => $_POST['presupuesto'] ? (float)$_POST['presupuesto'] : null,
             'plan_estado' => $_POST['estado'] ?? null,
-        ]);
+        ];
+        $data['integrity_hash'] = hash('sha256', json_encode($data));
+        $this->pm->updatePlan($id, $data);
         header('Location: /planeacion/' . $id . '?updated=1');
         exit;
     }

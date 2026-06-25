@@ -26,7 +26,7 @@ class ConfigController {
 
     public function crearEmpresa(): void {
         $pm = new PlanManager();
-        $pm->createEmpresa([
+        $id = $pm->createEmpresa([
             'empresa_nombre' => $_POST['nombre'],
             'empresa_razon_social' => $_POST['razon_social'] ?? '',
             'empresa_nit' => $_POST['nit'] ?? '',
@@ -36,12 +36,17 @@ class ConfigController {
             'empresa_email' => $_POST['email'] ?? '',
             'usuario_id' => Auth::userId(),
         ]);
+        $this->core->audit('crear', 'plan_empresas', $id, null,
+            ['empresa_nombre' => $_POST['nombre'], 'empresa_nit' => $_POST['nit'] ?? ''],
+            'Empresa creada');
         header('Location: /admin/config?empresa_ok=1'); exit;
     }
 
     public function editarEmpresa(): void {
         $pm = new PlanManager();
-        $pm->updateEmpresa((int)$_POST['empresa_id'], [
+        $empId = (int)$_POST['empresa_id'];
+        $anterior = $pm->getEmpresa($empId);
+        $pm->updateEmpresa($empId, [
             'empresa_nombre' => $_POST['nombre'],
             'empresa_razon_social' => $_POST['razon_social'] ?? '',
             'empresa_nit' => $_POST['nit'] ?? '',
@@ -50,6 +55,10 @@ class ConfigController {
             'empresa_telefono' => $_POST['telefono'] ?? '',
             'empresa_email' => $_POST['email'] ?? '',
         ]);
+        $this->core->audit('editar', 'plan_empresas', $empId,
+            $anterior ? ['empresa_nombre' => $anterior['empresa_nombre'], 'empresa_nit' => $anterior['empresa_nit']] : null,
+            ['empresa_nombre' => $_POST['nombre'], 'empresa_nit' => $_POST['nit'] ?? ''],
+            'Empresa editada');
         header('Location: /admin/config?empresa_ok=1'); exit;
     }
 
@@ -76,6 +85,7 @@ class ConfigController {
         foreach ($configs as $k => $v) {
             $this->safeExec("INSERT INTO sys_configuraciones (config_clave, config_valor, config_descripcion) VALUES (?,?,'') ON DUPLICATE KEY UPDATE config_valor=?", [$k, $v, $v]);
         }
+        $this->core->audit('personalizar', 'plan_empresas', $empresaId, null, $configs, 'Personalización guardada');
         header('Location: /admin/config?ok=1');
         exit;
     }

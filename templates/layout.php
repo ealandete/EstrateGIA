@@ -183,6 +183,15 @@ if (defined('IS_AJAX') && IS_AJAX) {
         </header>
 
         <div class="page-content">
+            <?php
+            $okMsg = $_GET['ok'] ?? null;
+            $errMsg = $_GET['err'] ?? $_GET['error'] ?? null;
+            if ($okMsg):
+            ?>
+            <div class="toast-msg toast-ok" id="toastOk"><i class="fas fa-check-circle me-2"></i><?= $okMsg === '1' ? 'Operación completada exitosamente.' : htmlspecialchars($okMsg) ?></div>
+            <?php elseif ($errMsg): ?>
+            <div class="toast-msg toast-err" id="toastErr"><i class="fas fa-exclamation-circle me-2"></i><?= htmlspecialchars($errMsg) ?></div>
+            <?php endif; ?>
             <?= $content ?? '' ?>
         </div>
     </main>

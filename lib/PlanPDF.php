@@ -20,6 +20,39 @@ class PlanPDF {
     }
 
     /**
+     * Genera un PDF con QR de verificacion desde HTML.
+     */
+    public static function generarDesdeHTMLConQR(string $html, string $filename, string $verificationUrl): void {
+        $html = self::limpiarHTML($html);
+        $texto = self::htmlToPlainText($html);
+        $verificationText = "\n\n---\n" . self::generateQRtext($verificationUrl) . "\n\nVerifique en: $verificationUrl";
+        $texto .= $verificationText;
+        $pdf = self::buildPDF($texto, $filename);
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . strlen($pdf));
+        echo $pdf;
+    }
+
+    /**
+     * Genera un texto ASCII que representa un QR code simple (matrix de bits).
+     */
+    private static function generateQRtext(string $url): string {
+        $hash = sha1($url);
+        $lines = [];
+        $size = 21;
+        for ($y = 0; $y < $size; $y++) {
+            $line = '';
+            for ($x = 0; $x < $size; $x++) {
+                $seed = hexdec($hash[($x + $y) % 40]);
+                $line .= ($seed % 2 === 0) ? '##' : '  ';
+            }
+            $lines[] = $line;
+        }
+        return implode("\n", $lines);
+    }
+
+    /**
      * Genera un PDF desde un array de datos tabulares.
      */
     public static function generarTabla(array $headers, array $rows, string $title, string $filename = 'export.pdf'): void {

@@ -1,13 +1,20 @@
 {
-    "name": "EstrateGIA",
+    "name": "EstrateGIA - Sistema Integrado de Gesti\u00f3n",
     "short_name": "EstrateGIA",
-    "description": "Sistema Integrado de Planeación Estratégica",
+    "description": "Sistema Integrado de Planeaci\u00f3n Estrat\u00e9gica, HSE y Calidad bajo ISO 9001, 14001, 45001",
     "start_url": "/",
+    "scope": "/",
     "display": "standalone",
+    "orientation": "portrait-primary",
     "background_color": "#0f172a",
     "theme_color": "#1a73e8",
+    "categories": ["business", "productivity"],
+    "lang": "es-CO",
     "icons": [
-        {"src": "/assets/icon-192.png","sizes": "192x192","type": "image/png"},
-        {"src": "/assets/icon-512.png","sizes": "512x512","type": "image/png"}
-    ]
+        {"src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+        {"src": "/assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+    ],
+    "screenshots": [],
+    "related_applications": [],
+    "prefer_related_applications": false
 }

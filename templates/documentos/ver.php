@@ -24,8 +24,28 @@ $versionOk = $_GET['version'] ?? null;
                 <div class="d-flex gap-1">
                     <button class="btn btn-sm btn-outline-secondary" onclick="window.print()"><i class="fas fa-print"></i></button>
                     <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('editVersion').style.display='block'"><i class="fas fa-code-branch"></i></button>
-                </div>
-            </div>
+    </div>
+</div>
+
+<script>
+async function firmarDocumento(id) {
+    if (!confirm('¿Confirmar firma electrónica de este documento?\n\nSe registrará su identidad, cargo, fecha y hora como firma electrónica.')) return;
+    var btn = event.target.closest('button');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Firmando...';
+    try {
+        var r = await fetch('/documentos/firmar/' + id, {method:'POST'});
+        var j = await r.json();
+        if (j.success) {
+            alert('Documento firmado electrónicamente.\nFirma: ' + j.firma.substring(0, 40) + '...\nFecha: ' + j.fecha);
+        } else {
+            alert('Error: ' + (j.error || 'No se pudo firmar'));
+        }
+    } catch(e) { alert('Error: ' + e.message); }
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-signature me-1"></i>Firmar';
+}
+</script>
             <div class="card-box-body" style="min-height:300px">
                 <?php if ($doc['documento_contenido_html']): ?>
                 <div class="p-3"><?= $doc['documento_contenido_html'] ?></div>
@@ -98,7 +118,11 @@ $versionOk = $_GET['version'] ?? null;
                 <a href="/documentos/publicar/<?= $doc['documento_id'] ?>" class="btn btn-primary btn-sm" onclick="return confirm('¿Publicar?')"><i class="fas fa-upload me-1"></i>Publicar</a>
                 <?php endif; ?>
                 <button class="btn btn-outline-secondary btn-sm" onclick="window.print()"><i class="fas fa-print me-1"></i>Imprimir</button>
+                <?php if ($doc['documento_estado'] === 'aprobado'): ?>
+                <button class="btn btn-warning btn-sm" onclick="firmarDocumento(<?= $doc['documento_id'] ?>)"><i class="fas fa-signature me-1"></i>Firmar</button>
+                <?php endif; ?>
             </div>
+        </div>
         </div>
     </div>
 </div>
