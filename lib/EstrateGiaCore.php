@@ -409,8 +409,10 @@ class EstrateGiaCore {
 
     public function decryptData(string $encryptedData): string {
         $data = base64_decode($encryptedData);
-        $iv = substr($data, 0, 16);
-        return openssl_decrypt(substr($data, 16), 'AES-256-CBC', $this->config['encrypt_key'], 0, $iv) ?: '';
+        $parts = explode('::', $data, 2);
+        if (count($parts) !== 2) return '';
+        $iv = substr($parts[0], 0, 16);
+        return openssl_decrypt($parts[1], 'AES-256-CBC', $this->config['encrypt_key'], 0, $iv) ?: '';
     }
 
     // base64 helpers moved to AuthService (kept for backward compat if needed)

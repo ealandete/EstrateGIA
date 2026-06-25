@@ -17,7 +17,10 @@ class SetupController {
      */
     public function index(): void {
         // Verificar si ya hay configuración
-        $yaConfigurado = $this->safe("SELECT COUNT(*) FROM sys_usuarios WHERE usuario_rol_id IN (1, 9, 10)") > 0;
+        $adminRoleIds = $this->safeAll("SELECT rol_id FROM sys_roles WHERE rol_nombre LIKE '%ADMIN%' OR rol_id = 1");
+        $adminIds = array_column($adminRoleIds, 'rol_id');
+        $placeholders = implode(',', array_fill(0, count($adminIds), '?'));
+        $yaConfigurado = count($adminIds) > 0 && $this->safe("SELECT COUNT(*) FROM sys_usuarios WHERE usuario_rol_id IN ($placeholders)", $adminIds) > 0;
         
         if ($yaConfigurado && !isset($_GET['force'])) {
             header('Location: /');
@@ -185,7 +188,7 @@ class SetupController {
                         'usuario_apellido' => $apellido,
                         'usuario_email' => $email,
                         'usuario_password_hash' => password_hash($password, PASSWORD_BCRYPT),
-                        'usuario_rol_id' => 9, // SUPER_ADMIN
+                        'usuario_rol_id' => $this->getAdminRoleId(),
                         'usuario_activo' => 1
                     ]);
                 }
@@ -198,7 +201,7 @@ class SetupController {
             }
         }
         
-        $usuario = $this->safeOne("SELECT * FROM sys_usuarios WHERE usuario_rol_id IN (1, 9, 10) LIMIT 1");
+        $usuario = $this->getExistingAdminUser();
         
         $pageTitle = 'Paso 3: Crear Administrador';
         ob_start();
@@ -260,5 +263,18 @@ class SetupController {
         } catch (Exception $e) {
             return false;
         }
+    }
+
+    private function getAdminRoleId(): int {
+        $rol = $this->safeOne("SELECT rol_id FROM sys_roles WHERE rol_nombre LIKE '%SUPER%ADMIN%' OR rol_id = 1 ORDER BY rol_id ASC LIMIT 1");
+        return (int)($rol['rol_id'] ?? 9);
+    }
+
+    private function getExistingAdminUser(): ?array {
+        $roles = $this->safeAll("SELECT rol_id FROM sys_roles WHERE rol_nombre LIKE '%ADMIN%' OR rol_id = 1");
+        $ids = array_column($roles, 'rol_id');
+        if (empty($ids)) return null;
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        return $this->safeOne("SELECT * FROM sys_usuarios WHERE usuario_rol_id IN ($placeholders) LIMIT 1", $ids);
     }
 }

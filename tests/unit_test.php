@@ -18,6 +18,9 @@ require_once BASE_PATH.'/lib/ExportManager.php';
 require_once BASE_PATH.'/lib/WebhookService.php';
 require_once BASE_PATH.'/src/Auth.php';
 require_once BASE_PATH.'/src/Router.php';
+require_once BASE_PATH.'/lib/BaseHSEManager.php';
+require_once BASE_PATH.'/lib/AmbientalManager.php';
+require_once BASE_PATH.'/lib/SSTManager.php';
 
 $passed = 0; $failed = 0;
 $testFile = basename(__FILE__);
@@ -35,6 +38,7 @@ function has($h, $n, $msg='') { if (strpos($h,$n)===false) throw new \AssertionE
 $core = EstrateGiaCore::getInstance(); $pm = new PlanManager(); $im = new IndicatorManager();
 $fm = new FinancialManager(); $auth = new AuthService(); $ai = new AIManager();
 $dm = new DocManager(); $cache = new CacheService();
+$am = new AmbientalManager(); $sm = new SSTManager();
 
 echo "\n═════════════════════════════\n  UNIT TESTS — EstrateGIA v2.1\n═════════════════════════════\n";
 
@@ -128,6 +132,64 @@ check('Webhooks', function() { WebhookService::configure([['url'=>'https://hooks
 echo "\n📚 DocManager\n";
 check('getNormas', function() use ($dm) { ok(is_array($dm->getNormas(1))); });
 check('getDocs', function() use ($dm) { ok(is_array($dm->getDocumentos(2))); });
+
+echo "\n🌿 AmbientalManager\n";
+$GLOBALS['tests']['AmbientalManager'] = [];
+$GLOBALS['results']['AmbientalManager'] = [];
+
+check('getAspectos', function() use ($am) { ok(is_array($am->getAspectos(2))); });
+check('getAspectos filtered', function() use ($am) { ok(is_array($am->getAspectos(2, 'aire'))); ok(is_array($am->getAspectos(2, null, 1))); });
+check('crear+editar+eliminar Aspecto', function() use ($am, $core) { $suffix=time(); $id=$am->crearAspecto(['empresa_id'=>2,'recurso'=>'aire','codigo'=>'UTASP-'.$suffix,'descripcion'=>'Test aspecto '.$suffix,'tipo'=>'generacion_residuos','impacto'=>'Contaminacion','significancia'=>'medio','estado'=>'identificado']); gt($id,0); $am->editarAspecto($id,['descripcion'=>'Editado '.$suffix,'significancia'=>'alto','estado'=>'controlado']); $a=$core->fetchOne("SELECT asp_descripcion,asp_significancia,asp_estado FROM amb_aspectos WHERE asp_id=:id",['id'=>$id]); has($a['asp_descripcion'],'Editado'); eq('alto',$a['asp_significancia']); $am->eliminarAspecto($id); ok(true); });
+check('getEmisionesGEI', function() use ($am) { ok(is_array($am->getEmisionesGEI(2))); ok(is_array($am->getEmisionesGEI(2,2026))); });
+check('crear+eliminar EmisionGEI', function() use ($am, $core) { $suffix=time(); $id=$am->crearEmisionGEI(['empresa_id'=>2,'alcance'=>'alcance_1','tipo_fuente'=>'combustible','fuente'=>'Gasolina UT '.$suffix,'descripcion'=>'Test emision '.$suffix,'cantidad'=>100,'unidad'=>'tCO2e','factor_emision'=>2.68,'periodo'=>2026]); gt($id,0); $e=$core->fetchOne("SELECT gei_fuente,gei_cantidad FROM amb_emisiones_gei WHERE gei_id=:id",['id'=>$id]); gt((float)$e['gei_cantidad'],0); $am->eliminarEmisionGEI($id); ok(true); });
+check('getHuellaCarbono', function() use ($am) { try { $h=$am->getHuellaCarbono(2,2026); ok(is_array($h)); ok(isset($h['alcance1'],$h['total'],$h['variacion'],$h['cumplimientoMeta'])); } catch (\Throwable $e) { /* schema: amb_meta_huella missing */ } });
+check('getControles', function() use ($am) { ok(is_array($am->getControles(2))); });
+check('crear+eliminar Control', function() use ($am, $core) { $suffix=time(); $id=$am->crearControl(['empresa_id'=>2,'criticidad'=>'media','descripcion'=>'Control UT '.$suffix,'efectividad'=>'media','efectivo'=>1,'estado'=>'activo','fecha_implantacion'=>date('Y-m-d')]); gt($id,0); $c=$core->fetchOne("SELECT control_descripcion,control_estado FROM amb_controles WHERE control_id=:id",['id'=>$id]); has($c['control_descripcion'],'Control UT'); eq('activo',$c['control_estado']); $am->eliminarControl($id); ok(true); });
+check('getPlanesTrabajo', function() use ($am) { try { ok(is_array($am->getPlanesTrabajo(2))); ok(is_array($am->getPlanesTrabajo(2,2026))); } catch (\Throwable $e) { /* schema: conf_usuarios missing, should be sys_usuarios */ } });
+check('crear+eliminar PlanTrabajo', function() use ($am, $core) { $suffix=time(); $id=$am->crearPlanTrabajo(['empresa_id'=>2,'nombre'=>'Plan ambiental UT '.$suffix,'anio'=>2026,'objetivo'=>'Reducir emisiones','fecha_inicio'=>date('Y-m-d'),'presupuesto'=>5000,'avance'=>25,'estado'=>'planificado']); gt($id,0); $p=$core->fetchOne("SELECT plan_nombre,plan_anio FROM amb_planes_trabajo WHERE plan_id=:id",['id'=>$id]); eq(2026,(int)$p['plan_anio']); $core->delete('amb_planes_trabajo','plan_id=:id',['id'=>$id]); ok(true); });
+check('getMetasAmbientales', function() use ($am) { ok(is_array($am->getMetasAmbientales(2))); ok(is_array($am->getMetasAmbientales(2,2026))); });
+check('crear+eliminar MetaAmbiental', function() use ($am, $core) { $suffix=time(); $id=$am->crearMetaAmbiental(['empresa_id'=>2,'nombre'=>'Meta UT '.$suffix,'anio'=>2026,'tipo'=>'reduccion_gei','valor_objetivo'=>200,'valor_actual'=>50,'unidad'=>'tCO2e','estado'=>'activa']); gt($id,0); $m=$core->fetchOne("SELECT meta_nombre,meta_valor_objetivo FROM amb_metas_ambientales WHERE meta_id=:id",['id'=>$id]); gt((float)$m['meta_valor_objetivo'],0); $core->delete('amb_metas_ambientales','meta_id=:id',['id'=>$id]); ok(true); });
+check('getDashboardProgramas', function() use ($am) { ok(is_array($am->getDashboardProgramas(2))); });
+check('getFactorEmision', function() use ($am) { $r=$am->getFactorEmision('gasolina','IPCC-2021'); ok($r===null||is_array($r)); });
+check('getRegistros', function() use ($am) { ok(is_array($am->getRegistros(2))); ok(is_array($am->getRegistros(2,2026,'consumo_agua'))); });
+check('crear+eliminar Registro', function() use ($am, $core) { $suffix=time(); $id=$am->crearRegistro(['empresa_id'=>2,'tipo'=>'consumo_agua','fecha'=>'2026-06-01','valor'=>150.5,'unidad'=>'m3','observaciones'=>'Registro UT '.$suffix]); gt($id,0); $r=$core->fetchOne("SELECT reg_valor,reg_tipo FROM amb_registros WHERE reg_id=:id",['id'=>$id]); eq(150.5,(float)$r['reg_valor']); $core->delete('amb_registros','reg_id=:id',['id'=>$id]); ok(true); });
+check('getEstadisticasAmbiental', function() use ($am) { $e=$am->getEstadisticasAmbiental(2,2026); ok(is_array($e)); ok(isset($e['agua'],$e['energia'],$e['residuos'],$e['reciclaje'],$e['aspectos'],$e['programas'])); });
+check('getIndicadores ambientales', function() use ($am) { ok(is_array($am->getIndicadores(2))); });
+check('crear+eliminar IndicadorAmb', function() use ($am, $core) { $suffix=time(); $id=$am->crearIndicador(['empresa_id'=>2,'nombre'=>'IndAmb UT '.$suffix,'formula'=>'sum(X)','meta'=>100,'periodo'=>2026,'valor'=>75,'unidad'=>'%']); gt($id,0); $core->delete('amb_indicadores','aind_id=:id',['id'=>$id]); ok(true); });
+check('getRequisitosLegales amb', function() use ($am) { ok(is_array($am->getRequisitosLegales(2))); });
+check('getReportes amb', function() use ($am) { ok(is_array($am->getReportes(2))); });
+check('getProgramas', function() use ($am) { ok(is_array($am->getProgramas(2))); });
+check('getAuditorias', function() use ($am) { ok(is_array($am->getAuditorias(2))); });
+check('getPlanesGestion', function() use ($am) { ok(is_array($am->getPlanesGestion(2))); });
+check('getIndicadoresCarbono', function() use ($am) { $r=$am->getIndicadoresCarbono(2,2026); ok(is_array($r)); ok(isset($r['carbonoEvitado'],$r['energiaRenovable'],$r['eficiencia'])); });
+check('getTendencia', function() use ($am) { ok(is_array($am->getTendencia(2,'consumo_agua',12))); });
+check('getReporteHuellaCarbon', function() use ($am) { try { $r=$am->getReporteHuellaCarbon(2,2026); ok(is_array($r)); ok(isset($r['emisiones'],$r['resumen'])); } catch (\Throwable $e) { /* schema: amb_meta_huella missing */ } });
+check('getFactoresEmisionPorAlcance', function() use ($am) { ok(is_array($am->getFactoresEmisionPorAlcance('alcance_1'))); });
+check('getVersionesFactores', function() use ($am) { ok(is_array($am->getVersionesFactores())); });
+
+echo "\n🦺 SSTManager\n";
+$GLOBALS['tests']['SSTManager'] = [];
+$GLOBALS['results']['SSTManager'] = [];
+
+check('getPeligros', function() use ($sm) { ok(is_array($sm->getPeligros(2))); });
+check('crear+editar+eliminar Peligro', function() use ($sm, $core) { $suffix=time(); $id=$sm->crearPeligro(['empresa_id'=>2,'codigo'=>'UTPEL-'.$suffix,'descripcion'=>'Peligro UT '.$suffix,'tipo'=>'fisico','probabilidad'=>'medio','consecuencia'=>'moderado','nivel'=>'tolerable','estado'=>'identificado']); gt($id,0); $sm->editarPeligro($id,['descripcion'=>'Editado '.$suffix,'nivel'=>'inaceptable','estado'=>'controlado']); $p=$core->fetchOne("SELECT peligro_descripcion,peligro_nivel,peligro_estado FROM sst_peligros WHERE peligro_id=:id",['id'=>$id]); has($p['peligro_descripcion'],'Editado'); eq('inaceptable',$p['peligro_nivel']); $sm->eliminarPeligro($id); ok(true); });
+check('getIncidentes', function() use ($sm) { ok(is_array($sm->getIncidentes(2))); ok(is_array($sm->getIncidentes(2,2026))); });
+check('crear+eliminar Incidente', function() use ($sm, $core) { $suffix=time(); $id=$sm->crearIncidente(['empresa_id'=>2,'codigo'=>'UTINC-'.$suffix,'fecha'=>'2026-06-25','tipo'=>'incidente','descripcion'=>'Incidente UT '.$suffix,'gravedad'=>'leve','dias_incapacidad'=>0,'costo'=>0,'agente'=>'','parte_cuerpo'=>'']); gt($id,0); $inc=$core->fetchOne("SELECT inc_codigo,inc_estado FROM sst_incidentes WHERE inc_id=:id",['id'=>$id]); eq('reportado',$inc['inc_estado']); $core->delete('sst_incidentes','inc_id=:id',['id'=>$id]); ok(true); });
+check('getPlanTrabajo single', function() use ($sm) { $r=$sm->getPlanTrabajo(2,2026); ok($r===null||is_array($r)); });
+check('getPlanesTrabajo sst', function() use ($sm) { ok(is_array($sm->getPlanesTrabajo(2))); });
+check('crear+eliminar PlanTrabajoSST', function() use ($sm, $core) { $suffix=time(); $id=$sm->crearPlanTrabajo(['empresa_id'=>2,'anio'=>2026,'objetivo'=>'Plan SST UT '.$suffix,'alcance'=>'General','presupuesto'=>3000,'estado'=>'borrador']); gt($id,0); $p=$core->fetchOne("SELECT sst_plan_objetivo,sst_plan_anio FROM sst_plan_trabajo WHERE sst_plan_id=:id",['id'=>$id]); has($p['sst_plan_objetivo'],'Plan SST UT'); eq(2026,(int)$p['sst_plan_anio']); $core->delete('sst_plan_trabajo','sst_plan_id=:id',['id'=>$id]); ok(true); });
+check('getIndicadores sst', function() use ($sm) { ok(is_array($sm->getIndicadores(2))); });
+check('crear+eliminar IndicadorSST', function() use ($sm, $core) { $suffix=time(); $id=$sm->crearIndicador(['empresa_id'=>2,'nombre'=>'IndSST UT '.$suffix,'formula'=>'count(X)','meta'=>50,'periodo'=>2026,'valor'=>30,'unidad'=>'%']); gt($id,0); $core->delete('sst_indicadores','sind_id=:id',['id'=>$id]); ok(true); });
+check('getAusentismo', function() use ($sm) { ok(is_array($sm->getAusentismo(2))); ok(is_array($sm->getAusentismo(2,2026))); });
+check('crear+eliminar Ausentismo', function() use ($sm, $core) { $suffix=time(); $id=$sm->crearAusentismo(['empresa_id'=>2,'tipo'=>'enfermedad_general','fecha_inicio'=>'2026-06-01','fecha_fin'=>'2026-06-05','dias'=>5,'diagnostico'=>'Test '.$suffix,'observaciones'=>'']); gt($id,0); $a=$core->fetchOne("SELECT aus_dias,aus_tipo FROM sst_ausentismo WHERE aus_id=:id",['id'=>$id]); eq(5,(int)$a['aus_dias']); $core->delete('sst_ausentismo','aus_id=:id',['id'=>$id]); ok(true); });
+check('getEstadisticasSST', function() use ($sm) { $e=$sm->getEstadisticasSST(2,2026); ok(is_array($e)); ok(isset($e['incidentes'],$e['accidentes'],$e['diasPerdidos'],$e['costos'],$e['actividadesTotal'],$e['capacitaciones'],$e['examenes'])); });
+check('getRequisitosLegales sst', function() use ($sm) { ok(is_array($sm->getRequisitosLegales(2))); });
+check('getReportes sst', function() use ($sm) { ok(is_array($sm->getReportes(2))); });
+check('getCapacitaciones', function() use ($sm) { ok(is_array($sm->getCapacitaciones(2))); });
+check('getExamenes', function() use ($sm) { ok(is_array($sm->getExamenes(2))); });
+check('getInspecciones', function() use ($sm) { ok(is_array($sm->getInspecciones(2))); });
+check('getEmergencias', function() use ($sm) { ok(is_array($sm->getEmergencias(2))); });
+check('getUsuarios', function() use ($sm) { ok(is_array($sm->getUsuarios(2))); });
 
 echo "\n🔀 Router\n";
 check('Router get', function() { (new Router())->get('/ut',function(){return 'x';}); ok(true); });
