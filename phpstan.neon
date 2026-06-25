@@ -1,0 +1,17 @@
+parameters:
+  level: 5
+  paths:
+    - lib/
+    - src/
+  excludePaths:
+    - public/
+    - templates/
+    - tests/
+    - database/
+  ignoreErrors:
+    - '#Unsafe usage of new static\(\)#'
+    - '#Call to an undefined method#'
+    - '#Dynamic call to static method#'
+  checkMissingIterableValueType: false
+  checkGenericClassInNonGenericObjectType: false
+  treatPhpDocTypesAsCertain: false

@@ -1,0 +1,61 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "EstrateGIA API",
+    "version": "1.0.0",
+    "description": "API REST del Sistema de Gestión de Planeación Estratégica con IA"
+  },
+  "servers": [{"url": "http://localhost:81", "description": "Servidor local"}],
+  "security": [{"bearerAuth": []}],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"}
+    }
+  },
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Iniciar sesión",
+        "requestBody": {"content": {"application/json": {"schema": {"type": "object", "properties": {"email": {"type": "string"}, "password": {"type": "string"}}}}}},
+        "responses": {"200": {"description": "Token JWT"}, "401": {"description": "Credenciales inválidas"}}
+      }
+    },
+    "/api/planes": {
+      "get": {"tags": ["Planeación"], "summary": "Listar planes estratégicos", "responses": {"200": {"description": "Lista de planes"}}},
+      "post": {"tags": ["Planeación"], "summary": "Crear plan estratégico", "responses": {"201": {"description": "Plan creado"}}}
+    },
+    "/api/planes/{id}": {
+      "get": {"tags": ["Planeación"], "summary": "Detalle de plan", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}], "responses": {"200": {"description": "Detalle del plan"}}}
+    },
+    "/api/indicadores": {
+      "get": {"tags": ["Indicadores"], "summary": "Listar indicadores KPIs", "responses": {"200": {"description": "Lista de indicadores"}}},
+      "post": {"tags": ["Indicadores"], "summary": "Crear indicador", "responses": {"201": {"description": "Indicador creado"}}}
+    },
+    "/api/mediciones": {
+      "get": {"tags": ["Mediciones"], "summary": "Listar mediciones", "responses": {"200": {"description": "Lista de mediciones"}}},
+      "post": {"tags": ["Mediciones"], "summary": "Registrar medición", "responses": {"201": {"description": "Medición registrada"}}}
+    },
+    "/api/procesos": {
+      "get": {"tags": ["Procesos"], "summary": "Listar procesos", "responses": {"200": {"description": "Mapa de procesos"}}},
+      "post": {"tags": ["Procesos"], "summary": "Crear proceso", "responses": {"201": {"description": "Proceso creado"}}}
+    },
+    "/api/documentos": {
+      "get": {"tags": ["Documentos"], "summary": "Listar documentos ISO", "responses": {"200": {"description": "Lista de documentos"}}},
+      "post": {"tags": ["Documentos"], "summary": "Crear documento", "responses": {"201": {"description": "Documento creado"}}}
+    },
+    "/api/evaluaciones/{usuario_id}": {
+      "get": {"tags": ["Evaluación"], "summary": "Evaluación de desempeño", "parameters": [{"name": "usuario_id", "in": "path", "required": true, "schema": {"type": "integer"}}], "responses": {"200": {"description": "Evaluación del colaborador"}}}
+    },
+    "/api/nc": {
+      "get": {"tags": ["Calidad"], "summary": "Listar No Conformidades", "responses": {"200": {"description": "Lista de NCs"}}},
+      "post": {"tags": ["Calidad"], "summary": "Registrar NC", "responses": {"201": {"description": "NC registrada"}}}
+    },
+    "/api/dashboard/ejecutivo": {
+      "get": {"tags": ["Dashboard"], "summary": "Dashboard ejecutivo", "responses": {"200": {"description": "Resumen ejecutivo"}}}
+    },
+    "/api/crm/sincronizar": {
+      "post": {"tags": ["Integraciones"], "summary": "Sincronizar datos desde CRM", "responses": {"200": {"description": "Resultados de sincronización"}}}
+    }
+  }
+}

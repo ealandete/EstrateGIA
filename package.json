@@ -1,0 +1,20 @@
+{
+  "name": "workspace",
+  "version": "1.0.0",
+  "description": "EstrateGIA es un sistema integral de gestión de planeación estratégica que guía a las organizaciones paso a paso en la definición, implementación y seguimiento de su estrategia, apoyándose en inteligencia artificial para recomendaciones y construcción de todos los componentes.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "lib": "lib",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "playwright": "^1.61.0"
+  }
+}

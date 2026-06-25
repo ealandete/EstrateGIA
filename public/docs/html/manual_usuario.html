@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Usuario — EstrateGIA v2.1</title>
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #0d47a1;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --purple: #6f42c1;
+            --gray-100: #f8f9fa;
+            --gray-200: #e9ecef;
+            --gray-600: #6c757d;
+            --gray-900: #212529;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.7;
+            color: var(--gray-900);
+            background: var(--gray-100);
+        }
+        .doc-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+        }
+        .doc-header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .doc-header p { font-size: 1.2rem; opacity: 0.9; }
+        .doc-meta {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        .doc-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            max-width: 1400px;
+            margin: 0 auto;
+            gap: 30px;
+            padding: 30px;
+        }
+        .toc {
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .toc h3 {
+            font-size: 1rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        .toc ul { list-style: none; }
+        .toc li { margin-bottom: 8px; }
+        .toc a {
+            color: var(--gray-600);
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: block;
+            padding: 4px 0;
+            transition: color 0.2s;
+        }
+        .toc a:hover { color: var(--primary); }
+        .toc-h3 { padding-left: 15px; }
+        .doc-content {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        h2 {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin: 40px 0 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--gray-200);
+        }
+        h3 {
+            font-size: 1.3rem;
+            color: var(--gray-900);
+            margin: 30px 0 15px;
+        }
+        h4 {
+            font-size: 1.1rem;
+            margin: 20px 0 10px;
+        }
+        p { margin-bottom: 15px; }
+        ul, ol { margin: 15px 0 15px 25px; }
+        li { margin-bottom: 8px; }
+        code {
+            background: var(--gray-100);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        th {
+            background: var(--gray-100);
+            font-weight: 600;
+        }
+        .diagram {
+            background: white;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        .diagram-title {
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+        .flow-box {
+            display: inline-block;
+            padding: 15px 25px;
+            border-radius: 8px;
+            margin: 10px;
+            font-weight: 500;
+            color: white;
+        }
+        .flow-arrow {
+            font-size: 1.5rem;
+            color: var(--gray-600);
+            margin: 0 10px;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid var(--primary);
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid var(--warning);
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid var(--success);
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        .screenshot {
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 20px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .screenshot img {
+            width: 100%;
+            display: block;
+        }
+        .screenshot-caption {
+            background: var(--gray-100);
+            padding: 10px 15px;
+            font-size: 0.85rem;
+            color: var(--gray-600);
+            text-align: center;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-primary { background: var(--primary); color: white; }
+        .badge-success { background: var(--success); color: white; }
+        .badge-warning { background: var(--warning); color: var(--gray-900); }
+        .badge-danger { background: var(--danger); color: white; }
+        @media print {
+            .toc { display: none; }
+            .doc-container { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .doc-container { grid-template-columns: 1fr; }
+            .toc { position: static; }
+        }
+    </style>
+</head>
+<body>
+    <div class="doc-header">
+        <h1>Manual de Usuario</h1>
+        <p>Guía completa organizada por perfil de usuario</p>
+        <div class="doc-meta">
+            <span><i class="fas fa-calendar"></i> 22/06/2026</span>
+            <span><i class="fas fa-code-branch"></i> v2.1</span>
+            <span><i class="fas fa-file-lines"></i> 45 páginas</span>
+        </div>
+    </div>
+    <div class="doc-container">
+        <nav class="toc"><h3>Índice</h3><ul><li class='toc-h2'><a href='#section-0'>1. Introducción</a></li><li class='toc-h3'><a href='#section-1'>1.1 Metodologías Soportadas</a></li><li class='toc-h2'><a href='#section-2'>2. Acceso al Sistema</a></li><li class='toc-h3'><a href='#section-3'>2.1 Inicio de Sesión</a></li><li class='toc-h2'><a href='#section-4'>3. Interfaz General</a></li><li class='toc-h3'><a href='#section-5'>3.1 Estructura del Menú</a></li><li class='toc-h2'><a href='#section-6'>4. Perfil: Director General</a></li><li class='toc-h3'><a href='#section-7'>4.1 Crear Plan Estratégico</a></li><li class='toc-h3'><a href='#section-8'>4.2 Dashboard SIG</a></li><li class='toc-h2'><a href='#section-9'>5. Perfil: Gerente de Área</a></li><li class='toc-h3'><a href='#section-10'>5.1 Gestión de Procesos</a></li><li class='toc-h3'><a href='#section-11'>5.2 Indicadores KPI</a></li><li class='toc-h2'><a href='#section-12'>6. Perfil: Coordinador Calidad/HSE</a></li><li class='toc-h3'><a href='#section-13'>6.1 Sistema de Gestión SST</a></li><li class='toc-h3'><a href='#section-14'>6.2 Gestión Ambiental (ISO 14001)</a></li><li class='toc-h2'><a href='#section-15'>7. Perfil: Administrador</a></li><li class='toc-h3'><a href='#section-16'>7.1 Gestión de Usuarios</a></li><li class='toc-h3'><a href='#section-17'>7.2 Roles y Permisos</a></li><li class='toc-h2'><a href='#section-18'>8. Atajos de Teclado</a></li><li class='toc-h2'><a href='#section-19'>9. Preguntas Frecuentes</a></li><li class='toc-h3'><a href='#section-20'>¿Cómo cambio de plan activo?</a></li><li class='toc-h3'><a href='#section-21'>¿Por qué no veo el menú de Sistema?</a></li><li class='toc-h3'><a href='#section-22'>¿El sistema funciona sin internet?</a></li></ul></nav>
+        <main class="doc-content">
+            <h2 id="section-0">1. Introducción</h2>
+<p>EstrateGIA es un sistema integral de gestión de planeación estratégica que incorpora 5 metodologías reconocidas internacionalmente, integradas con inteligencia artificial para asistir en la construcción de planes estratégicos completos.</p>
+
+<div class="info-box">
+<strong>🎯 Objetivo del Manual:</strong> Guiar a cada perfil de usuario en el uso efectivo del sistema, desde la alta dirección hasta el personal operativo.
+</div>
+
+<h3>1.1 Metodologías Soportadas</h3>
+<table>
+<thead><tr><th>Metodología</th><th>Enfoque</th><th>Aplicación</th></tr></thead>
+<tbody>
+<tr><td><span class="badge badge-primary">BSC</span></td><td>4 Perspectivas del Balanced Scorecard</td><td>Planeación tradicional con indicadores</td></tr>
+<tr><td><span class="badge badge-success">OKR</span></td><td>Objectives & Key Results</td><td>Metas ágiles con scoring trimestral</td></tr>
+<tr><td><span class="badge badge-warning">Hoshin Kanri</span></td><td>Despliegue de políticas japonés</td><td>Catchball y alineación vertical</td></tr>
+<tr><td><span class="badge badge-danger">Escenarios</span></td><td>Planeación por escenarios</td><td>Análisis de futuros alternativos</td></tr>
+<tr><td><span class="badge" style="background:#6f42c1;color:white">Design Thinking</span></td><td>Innovación centrada en el usuario</td><td>Canvas y prototipado rápido</td></tr>
+</tbody>
+</table>
+
+<h2 id="section-1">2. Acceso al Sistema</h2>
+<div class="screenshot">
+    <img src="/docs/screenshots/login.png" alt="Pantalla de inicio de sesión de EstrateGIA" loading="lazy">
+    <div class="screenshot-caption">Pantalla de inicio de sesión de EstrateGIA</div>
+</div>
+<h3>2.1 Inicio de Sesión</h3>
+<ol>
+<li>Abra su navegador en la URL del sistema</li>
+<li>Ingrese su email y contraseña</li>
+<li>Si tiene activada la verificación en dos pasos (2FA), ingrese el código de 6 dígitos</li>
+</ol>
+
+<div class="warning-box">
+<strong>⚠️ Importante:</strong> Después de 5 intentos fallidos, su cuenta se bloqueará por 15 minutos por seguridad.
+</div>
+
+<h2 id="section-2">3. Interfaz General</h2>
+<div class="screenshot">
+    <img src="/docs/screenshots/dashboard.png" alt="Dashboard SIG - Vista principal del sistema" loading="lazy">
+    <div class="screenshot-caption">Dashboard SIG - Vista principal del sistema</div>
+</div>
+<h3>3.1 Estructura del Menú</h3>
+<div class="diagram">
+<div class="diagram-title">Arquitectura del Menú Lateral</div>
+<svg width="600" height="300" viewBox="0 0 600 300">
+  <!-- Sidebar -->
+  <rect x="10" y="10" width="180" height="280" rx="8" fill="#1a73e8" opacity="0.1" stroke="#1a73e8" stroke-width="2"/>
+  <text x="100" y="35" text-anchor="middle" font-weight="bold" fill="#1a73e8">📊 Estratégico</text>
+  <text x="30" y="60" font-size="12">• Planeación</text>
+  <text x="30" y="80" font-size="12">• SIG</text>
+  <text x="30" y="100" font-size="12">• PHVA</text>
+  <text x="30" y="120" font-size="12">• Calendario</text>
+  <text x="30" y="140" font-size="12">• Evaluación</text>
+  <text x="30" y="160" font-size="12">• IA Asistente</text>
+  
+  <text x="100" y="190" text-anchor="middle" font-weight="bold" fill="#28a745">⚙️ Operativo</text>
+  <text x="30" y="215" font-size="12">• Procesos</text>
+  <text x="30" y="235" font-size="12">• Indicadores</text>
+  <text x="30" y="255" font-size="12">• Documentos</text>
+  
+  <text x="100" y="285" text-anchor="middle" font-weight="bold" fill="#ffc107">✅ Calidad</text>
+  
+  <!-- Main Content -->
+  <rect x="210" y="10" width="380" height="280" rx="8" fill="#f8f9fa" stroke="#e0e0e0" stroke-width="2"/>
+  <text x="400" y="35" text-anchor="middle" font-weight="bold" fill="#333">Contenido Principal</text>
+  <rect x="230" y="50" width="340" height="40" rx="4" fill="white" stroke="#e0e0e0"/>
+  <text x="400" y="75" text-anchor="middle" font-size="12" fill="#666">Barra superior: Empresa | Plan | Notificaciones</text>
+  <rect x="230" y="100" width="160" height="80" rx="4" fill="white" stroke="#e0e0e0"/>
+  <rect x="410" y="100" width="160" height="80" rx="4" fill="white" stroke="#e0e0e0"/>
+  <rect x="230" y="190" width="340" height="80" rx="4" fill="white" stroke="#e0e0e0"/>
+</svg>
+</div>
+
+<h2 id="section-3">4. Perfil: Director General</h2>
+<div class="screenshot">
+    <img src="/docs/screenshots/planeacion_crear.png" alt="Formulario de creación de plan estratégico" loading="lazy">
+    <div class="screenshot-caption">Formulario de creación de plan estratégico</div>
+</div>
+<div class="screenshot">
+    <img src="/docs/screenshots/planeacion.png" alt="Lista de planes estratégicos" loading="lazy">
+    <div class="screenshot-caption">Lista de planes estratégicos</div>
+</div>
+<div class="info-box">
+<strong>👤 Rol:</strong> Director General / Alta Dirección<br>
+<strong>🔑 Acceso:</strong> Todos los módulos estratégicos
+</div>
+
+<h3>4.1 Crear Plan Estratégico</h3>
+<ol>
+<li>Navegue a <strong>📊 Estratégico > Planeación</strong></li>
+<li>Haga clic en <strong>"Nuevo Plan Estratégico"</strong></li>
+<li>Seleccione la metodología (BSC, OKR, Hoshin, Escenarios, Design Thinking)</li>
+<li>Complete: nombre, periodo, descripción</li>
+<li>Haga clic en <strong>"Crear Plan"</strong></li>
+</ol>
+
+<h3>4.2 Dashboard SIG</h3>
+<p>El Sistema Integrado de Gestión muestra un resumen consolidado de todos los planes activos con indicadores clave de rendimiento.</p>
+
+<div class="diagram">
+<div class="diagram-title">Flujo de Trabajo del Director</div>
+<div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap">
+  <div class="flow-box" style="background:#1a73e8">Planear</div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-box" style="background:#28a745">Ejecutar</div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-box" style="background:#ffc107;color:#333">Verificar</div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-box" style="background:#dc3545">Actuar</div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-box" style="background:#6f42c1">Mejorar</div>
+</div>
+</div>
+
+<h2 id="section-4">5. Perfil: Gerente de Área</h2>
+<div class="screenshot">
+    <img src="/docs/screenshots/procesos.png" alt="Gestión de procesos" loading="lazy">
+    <div class="screenshot-caption">Gestión de procesos</div>
+</div>
+<div class="screenshot">
+    <img src="/docs/screenshots/evaluacion.png" alt="Evaluación de desempeño" loading="lazy">
+    <div class="screenshot-caption">Evaluación de desempeño</div>
+</div>
+<div class="screenshot">
+    <img src="/docs/screenshots/phva.png" alt="Ciclo PHVA - Mejora continua" loading="lazy">
+    <div class="screenshot-caption">Ciclo PHVA - Mejora continua</div>
+</div>
+<div class="screenshot">
+    <img src="/docs/screenshots/indicadores.png" alt="Dashboard de indicadores KPI" loading="lazy">
+    <div class="screenshot-caption">Dashboard de indicadores KPI</div>
+</div>
+<h3>5.1 Gestión de Procesos</h3>
+<p>Los gerentes de área gestionan los procesos operativos de su unidad de negocio:</p>
+<ul>
+<li><strong>Macroprocesos:</strong> Estratégicos, Misionales, de Apoyo, de Evaluación</li>
+<li><strong>Procesos:</strong> Flujos de trabajo con responsables y tareas</li>
+<li><strong>Procedimientos:</strong> Instrucciones detalladas paso a paso</li>
+</ul>
+
+<h3>5.2 Indicadores KPI</h3>
+<p>Cada proceso puede tener indicadores asociados con:</p>
+<table>
+<thead><tr><th>Campo</th><th>Descripción</th><th>Ejemplo</th></tr></thead>
+<tbody>
+<tr><td>Nombre</td><td>Descripción del indicador</td><td>Tasa de satisfacción</td></tr>
+<tr><td>Fórmula</td><td>Cálculo del valor</td><td>(Satisfechos / Total) × 100</td></tr>
+<tr><td>Unidad</td><td>Unidad de medida</td><td>%</td></tr>
+<tr><td>Frecuencia</td><td>Cada cuánto se mide</td><td>Mensual</td></tr>
+<tr><td>Meta</td><td>Valor objetivo</td><td>90%</td></tr>
+<tr><td>Rango</td><td>Mínimo y máximo</td><td>0 - 100</td></tr>
+</tbody>
+</table>
+
+<h2 id="section-5">6. Perfil: Coordinador Calidad/HSE</h2>
+<div class="screenshot">
+    <img src="/docs/screenshots/ambiental.png" alt="Gestión ambiental ISO 14001" loading="lazy">
+    <div class="screenshot-caption">Gestión ambiental ISO 14001</div>
+</div>
+<div class="screenshot">
+    <img src="/docs/screenshots/sst.png" alt="Seguridad y Salud en el Trabajo" loading="lazy">
+    <div class="screenshot-caption">Seguridad y Salud en el Trabajo</div>
+</div>
+<div class="screenshot">
+    <img src="/docs/screenshots/calidad.png" alt="Dashboard de calidad" loading="lazy">
+    <div class="screenshot-caption">Dashboard de calidad</div>
+</div>
+<h3>6.1 Sistema de Gestión SST</h3>
+<p>Basado en el Decreto 1072 de 2015, el módulo SST incluye:</p>
+<ul>
+<li><strong>Autoevaluación:</strong> 14 artículos del decreto</li>
+<li><strong>Identificación de Peligros:</strong> Físico, químico, biológico, ergonómico, psicosocial</li>
+<li><strong>Plan de Trabajo Anual:</strong> Objetivos, metas, actividades</li>
+<li><strong>Indicadores SST:</strong> Accidentes, ausentismo, capacitaciones</li>
+</ul>
+
+<h3>6.2 Gestión Ambiental (ISO 14001)</h3>
+<p>Cumplimiento de los 21 requisitos de la norma ISO 14001:</p>
+<ul>
+<li>Aspectos e impactos ambientales</li>
+<li>Requisitos legales aplicables</li>
+<li>Objetivos y metas ambientales</li>
+<li>Auditorías internas</li>
+</ul>
+
+<h2 id="section-6">7. Perfil: Administrador</h2>
+<div class="screenshot">
+    <img src="/docs/screenshots/documentacion.png" alt="Centro de documentación" loading="lazy">
+    <div class="screenshot-caption">Centro de documentación</div>
+</div>
+<div class="screenshot">
+    <img src="/docs/screenshots/admin_roles.png" alt="Gestión de roles y permisos" loading="lazy">
+    <div class="screenshot-caption">Gestión de roles y permisos</div>
+</div>
+<div class="screenshot">
+    <img src="/docs/screenshots/admin_usuarios.png" alt="Administración de usuarios" loading="lazy">
+    <div class="screenshot-caption">Administración de usuarios</div>
+</div>
+<div class="screenshot">
+    <img src="/docs/screenshots/soporte.png" alt="Sistema de soporte técnico" loading="lazy">
+    <div class="screenshot-caption">Sistema de soporte técnico</div>
+</div>
+<h3>7.1 Gestión de Usuarios</h3>
+<p>Ruta: <strong>🔧 Sistema > Usuarios</strong></p>
+<ol>
+<li>Ver lista de usuarios activos</li>
+<li>Crear nuevo usuario con rol asignado</li>
+<li>Editar datos de usuario existente</li>
+<li>Activar/desactivar acceso</li>
+</ol>
+
+<h3>7.2 Roles y Permisos</h3>
+<table>
+<thead><tr><th>Rol</th><th>Acceso</th><th>Nivel</th></tr></thead>
+<tbody>
+<tr><td>Super Admin</td><td>Completo</td><td><span class="badge badge-danger">CRÍTICO</span></td></tr>
+<tr><td>Director General</td><td>Estratégico + Operativo</td><td><span class="badge badge-warning">ALTO</span></td></tr>
+<tr><td>Gerente de Área</td><td>Operativo + Calidad</td><td><span class="badge badge-warning">ALTO</span></td></tr>
+<tr><td>Coordinador</td><td>Calidad + HSE</td><td><span class="badge badge-primary">MEDIO</span></td></tr>
+<tr><td>Analista</td><td>Consulta + Reportes</td><td><span class="badge badge-primary">MEDIO</span></td></tr>
+<tr><td>Colaborador</td><td>Consulta limitada</td><td><span class="badge badge-success">BAJO</span></td></tr>
+<tr><td>Auditor</td><td>Solo lectura</td><td><span class="badge badge-success">BAJO</span></td></tr>
+</tbody>
+</table>
+
+<h2 id="section-7">8. Atajos de Teclado</h2>
+<table>
+<thead><tr><th>Atajo</th><th>Acción</th></tr></thead>
+<tbody>
+<tr><td><code>Esc</code></td><td>Cerrar ventana modal abierta</td></tr>
+<tr><td><code>Ctrl + S</code></td><td>Guardar formulario activo</td></tr>
+<tr><td><code>Ctrl + N</code></td><td>Abrir formulario de nuevo registro</td></tr>
+</tbody>
+</table>
+
+<h2 id="section-8">9. Preguntas Frecuentes</h2>
+<h3>¿Cómo cambio de plan activo?</h3>
+<p>Use el selector "Plan" en la barra superior. El sistema recordará su selección.</p>
+
+<h3>¿Por qué no veo el menú de Sistema?</h3>
+<p>El menú "Sistema" solo aparece para administradores. Si es administrador y no lo ve, haga clic en el título del grupo para expandirlo.</p>
+
+<h3>¿El sistema funciona sin internet?</h3>
+<p>Sí, todos los recursos se cargan localmente. Solo las funcionalidades de IA requieren conexión (modo simulado disponible offline).</p>
+        </main>
+    </div>
+</body>
+</html>

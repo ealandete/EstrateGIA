@@ -1,0 +1,78 @@
+{
+  "project_name": "EstrateGIA",
+  "project_version": "1.0.0",
+  "description": "Sistema de Gestión de Planeación Estratégica con Inteligencia Artificial",
+  "team": {
+    "mike": {
+      "role": "Team Leader",
+      "responsibilities": ["Coordinación general", "Arquitectura del sistema", "Code review"]
+    },
+    "emma": {
+      "role": "Product Manager",
+      "responsibilities": ["Requisitos", "Casos de uso", "Priorización", "User stories"]
+    },
+    "bob": {
+      "role": "Architect",
+      "responsibilities": ["Diseño de base de datos", "API design", "Patrones de arquitectura"]
+    },
+    "alex": {
+      "role": "Engineer",
+      "responsibilities": ["Backend PHP", "Managers", "API endpoints", "Triggers/SPs"]
+    },
+    "david": {
+      "role": "Data Analyst",
+      "responsibilities": ["Indicadores KPIs", "Dashboard design", "Minería de datos", "Reportes"]
+    },
+    "iris": {
+      "role": "Researcher",
+      "responsibilities": ["Normas ISO", "Metodologías", "Sectores", "Documentación sectorial"]
+    }
+  },
+  "tech_stack": {
+    "backend": "PHP 7.4+",
+    "database": "MySQL 5.7+ / MariaDB 10.2+",
+    "frontend_web": "ScriptCase 9",
+    "frontend_mobile": "React Native 0.72+",
+    "ai_integration": "OpenAI / Claude / Gemini",
+    "auth": "JWT HS256",
+    "encryption": "AES-256-CBC"
+  },
+  "modules": {
+    "sys": "Sistema base - usuarios, roles, permisos",
+    "plan": "Planeación estratégica - metodologías, planes, objetivos",
+    "proc": "Gestión de procesos - macroprocesos, tareas, workflows",
+    "ind": "Indicadores KPIs - 4 variantes, mediciones, evaluaciones",
+    "crm": "Integración CRM/Web Services - conexiones, mapeos, minería",
+    "doc": "Gestión documental ISO - normas, plantillas, auditorías",
+    "ia": "Inteligencia Artificial - recomendaciones, predicciones, asistencia",
+    "dash": "Dashboards - tableros, widgets, visualizaciones"
+  },
+  "database": {
+    "name": "estrategia_v1",
+    "charset": "utf8mb4",
+    "tables": 45,
+    "triggers": 6,
+    "stored_procedures": 2,
+    "indexes": 30
+  },
+  "methodologies_supported": [
+    "Balanced Scorecard (BSC)",
+    "OKR (Objectives & Key Results)",
+    "Hoshin Kanri (Policy Deployment)",
+    "Planeación por Escenarios",
+    "Design Thinking Estratégico"
+  ],
+  "kpi_variants": [
+    {"nombre": "Cumplimiento", "color": "#28a745", "icono": "fa-check-circle"},
+    {"nombre": "Oportunidad", "color": "#ffc107", "icono": "fa-clock"},
+    {"nombre": "Calidad", "color": "#007bff", "icono": "fa-star"},
+    {"nombre": "Productividad", "color": "#6f42c1", "icono": "fa-chart-line"}
+  ],
+  "sectors": [
+    {"nombre": "Salud", "normas": ["ISO 7101:2023", "ISO 9001:2015", "ISO 45001:2018", "ISO 15189:2022"]},
+    {"nombre": "Inmobiliario", "normas": ["ISO 41001:2018", "ISO 19650", "ISO 9001:2015"]},
+    {"nombre": "Logística Farmacéutica", "normas": ["ISO 13485:2016", "ISO 28000:2022", "GDP/BPD"]}
+  ],
+  "environment": "development",
+  "created": "2026-05-11"
+}

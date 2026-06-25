@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Políticas de Programación — EstrateGIA v3.0</title>
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #0d47a1;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --purple: #6f42c1;
+            --gray-100: #f8f9fa;
+            --gray-200: #e9ecef;
+            --gray-600: #6c757d;
+            --gray-900: #212529;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.7;
+            color: var(--gray-900);
+            background: var(--gray-100);
+        }
+        .doc-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+        }
+        .doc-header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .doc-header p { font-size: 1.2rem; opacity: 0.9; }
+        .doc-meta {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        .doc-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            max-width: 1400px;
+            margin: 0 auto;
+            gap: 30px;
+            padding: 30px;
+        }
+        .toc {
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .toc h3 {
+            font-size: 1rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        .toc ul { list-style: none; }
+        .toc li { margin-bottom: 8px; }
+        .toc a {
+            color: var(--gray-600);
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: block;
+            padding: 4px 0;
+            transition: color 0.2s;
+        }
+        .toc a:hover { color: var(--primary); }
+        .toc-h3 { padding-left: 15px; }
+        .doc-content {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        h2 {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin: 40px 0 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--gray-200);
+        }
+        h3 {
+            font-size: 1.3rem;
+            color: var(--gray-900);
+            margin: 30px 0 15px;
+        }
+        h4 {
+            font-size: 1.1rem;
+            margin: 20px 0 10px;
+        }
+        p { margin-bottom: 15px; }
+        ul, ol { margin: 15px 0 15px 25px; }
+        li { margin-bottom: 8px; }
+        code {
+            background: var(--gray-100);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        th {
+            background: var(--gray-100);
+            font-weight: 600;
+        }
+        .diagram {
+            background: white;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        .diagram-title {
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+        .flow-box {
+            display: inline-block;
+            padding: 15px 25px;
+            border-radius: 8px;
+            margin: 10px;
+            font-weight: 500;
+            color: white;
+        }
+        .flow-arrow {
+            font-size: 1.5rem;
+            color: var(--gray-600);
+            margin: 0 10px;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid var(--primary);
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid var(--warning);
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid var(--success);
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        .screenshot {
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 20px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .screenshot img {
+            width: 100%;
+            display: block;
+        }
+        .screenshot-caption {
+            background: var(--gray-100);
+            padding: 10px 15px;
+            font-size: 0.85rem;
+            color: var(--gray-600);
+            text-align: center;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-primary { background: var(--primary); color: white; }
+        .badge-success { background: var(--success); color: white; }
+        .badge-warning { background: var(--warning); color: var(--gray-900); }
+        .badge-danger { background: var(--danger); color: white; }
+        @media print {
+            .toc { display: none; }
+            .doc-container { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .doc-container { grid-template-columns: 1fr; }
+            .toc { position: static; }
+        }
+    </style>
+</head>
+<body>
+    <div class="doc-header">
+        <h1>Políticas de Programación</h1>
+        <p>Estándares de código, seguridad y despliegue</p>
+        <div class="doc-meta">
+            <span><i class="fas fa-calendar"></i> 22/06/2026</span>
+            <span><i class="fas fa-code-branch"></i> v3.0</span>
+            <span><i class="fas fa-file-lines"></i> 38 páginas</span>
+        </div>
+    </div>
+    <div class="doc-container">
+        <nav class="toc"><h3>Índice</h3><ul><li class='toc-h2'><a href='#section-0'>1. Introducción</a></li><li class='toc-h2'><a href='#section-1'>2. Estándares de Código PHP</a></li><li class='toc-h3'><a href='#section-2'>2.1 Declaración Inicial Obligatoria</a></li><li class='toc-h3'><a href='#section-3'>2.2 Uso de SafeQuery</a></li><li class='toc-h3'><a href='#section-4'>2.3 Manejo de Nulos</a></li><li class='toc-h2'><a href='#section-5'>3. Seguridad</a></li><li class='toc-h3'><a href='#section-6'>3.1 Autenticación</a></li><li class='toc-h3'><a href='#section-7'>3.2 Autorización por Rol</a></li><li class='toc-h3'><a href='#section-8'>3.3 Protección CSRF</a></li><li class='toc-h2'><a href='#section-9'>4. Base de Datos</a></li><li class='toc-h3'><a href='#section-10'>4.1 Convenciones de Nomenclatura</a></li><li class='toc-h3'><a href='#section-11'>4.2 Índices Obligatorios</a></li><li class='toc-h2'><a href='#section-12'>5. Testing</a></li><li class='toc-h3'><a href='#section-13'>5.1 Cobertura Mínima</a></li><li class='toc-h3'><a href='#section-14'>5.2 Ejecución de Tests</a></li><li class='toc-h2'><a href='#section-15'>6. Documentación</a></li><li class='toc-h3'><a href='#section-16'>6.1 Comentarios en Código</a></li><li class='toc-h3'><a href='#section-17'>6.2 Documentación de APIs</a></li><li class='toc-h2'><a href='#section-18'>7. Despliegue</a></li><li class='toc-h3'><a href='#section-19'>7.1 Checklist Pre-Despliegue</a></li><li class='toc-h3'><a href='#section-20'>7.2 Script de Despliegue</a></li><li class='toc-h2'><a href='#section-21'>8. Reglas de Oro</a></li></ul></nav>
+        <main class="doc-content">
+            <h2 id="section-0">1. Introducción</h2>
+<p>Este documento establece los estándares de programación obligatorios para el desarrollo y mantenimiento del sistema EstrateGIA v2.1. Todos los desarrolladores deben seguir estas políticas para garantizar la calidad, seguridad y mantenibilidad del código.</p>
+
+<div class="warning-box">
+<strong>⚠️ Obligatorio:</strong> El incumplimiento de estas políticas puede resultar en rechazo de código en revisiones y auditorías.
+</div>
+
+<h2 id="section-1">2. Estándares de Código PHP</h2>
+<h3>2.1 Declaración Inicial Obligatoria</h3>
+<p>Todo archivo PHP debe comenzar con:</p>
+<pre><code>&lt;?php
+declare(strict_types=1);</code></pre>
+
+<div class="info-box">
+<strong>📌 Razón:</strong> <code>strict_types=1</code> fuerza la verificación estricta de tipos, previniendo errores de conversión implícita.
+</div>
+
+<h3>2.2 Uso de SafeQuery</h3>
+<p>Todo controlador que ejecute consultas SQL debe incluir el trait SafeQuery:</p>
+<pre><code>class MiController {
+    use \SafeQuery;
+    private $core;
+    
+    public function __construct() {
+        Auth::guard();
+        $this->core = EstrateGiaCore::getInstance();
+    }
+}</code></pre>
+
+<div class="danger-box" style="background:#f8d7da;border-left:4px solid #dc3545;padding:15px 20px;border-radius:0 8px 8px 0;margin:20px 0">
+<strong>❌ PROHIBIDO:</strong> Usar <code>$this->db->query()</code> con concatenación de strings de usuario. Siempre usar prepared statements a través de SafeQuery.
+</div>
+
+<h3>2.3 Manejo de Nulos</h3>
+<p>Nunca pasar valores null a funciones PHP que no lo acepten:</p>
+<table>
+<thead><tr><th>❌ Incorrecto</th><th>✅ Correcto</th></tr></thead>
+<tbody>
+<tr><td><code>htmlspecialchars($var)</code></td><td><code>htmlspecialchars($var ?? '—')</code></td></tr>
+<tr><td><code>strtotime($var)</code></td><td><code>strtotime($var ?? 'now')</code></td></tr>
+<tr><td><code>number_format($var, 0)</code></td><td><code>number_format((float)$var, 0)</code></td></tr>
+<tr><td><code>count($var)</code></td><td><code>count($var ?? [])</code></td></tr>
+</tbody>
+</table>
+
+<h2 id="section-2">3. Seguridad</h2>
+<h3>3.1 Autenticación</h3>
+<p>Todo controlador debe verificar autenticación en el constructor:</p>
+<pre><code>public function __construct() {
+    Auth::guard(); // Redirige a login si no está autenticado
+    $this->core = EstrateGiaCore::getInstance();
+}</code></pre>
+
+<h3>3.2 Autorización por Rol</h3>
+<p>Para rutas administrativas, verificar rol específico:</p>
+<pre><code>public function adminAction(): void {
+    $userRol = (int)($_SESSION['auth_user']['usuario_rol_id'] ?? 0);
+    $adminRoles = [1, 9, 10]; // Super Admin, SUPER_ADMIN, ADMIN
+    if (!in_array($userRol, $adminRoles)) {
+        http_response_code(403);
+        die('Acceso denegado');
+    }
+    // ... lógica administrativa
+}</code></pre>
+
+<h3>3.3 Protección CSRF</h3>
+<p>Todos los formularios POST deben incluir token CSRF:</p>
+<pre><code>&lt;form method="POST"&gt;
+    &lt;input type="hidden" name="csrf_token" value="&lt;?= $csrfToken ?&gt;"&gt;
+    &lt;!-- campos del formulario --&gt;
+&lt;/form&gt;</code></pre>
+
+<h2 id="section-3">4. Base de Datos</h2>
+<h3>4.1 Convenciones de Nomenclatura</h3>
+<table>
+<thead><tr><th>Elemento</th><th>Convención</th><th>Ejemplo</th></tr></thead>
+<tbody>
+<tr><td>Tablas</td><td>prefijo_modulo_nombre</td><td><code>plan_objetivos</code></td></tr>
+<tr><td>Primary Key</td><td>{tabla_singular}_id</td><td><code>objetivo_id</code></td></tr>
+<tr><td>Foreign Key</td><td>Mismo nombre que PK</td><td><code>objetivo_plan_id</code></td></tr>
+<tr><td>Timestamps</td><td>created_at, updated_at</td><td><code>created_at TIMESTAMP</code></td></tr>
+<tr><td>Booleanos</td><td>{campo}_activo</td><td><code>usuario_activo TINYINT(1)</code></td></tr>
+</tbody>
+</table>
+
+<h3>4.2 Índices Obligatorios</h3>
+<p>Toda columna usada en WHERE, JOIN u ORDER BY debe tener índice:</p>
+<pre><code>CREATE INDEX idx_objetivo_plan ON plan_objetivos(objetivo_plan_id);
+CREATE INDEX idx_indicador_objetivo ON ind_indicadores(indicador_objetivo_id);
+CREATE INDEX idx_usuario_empresa ON sys_usuarios(usuario_empresa_id);</code></pre>
+
+<h2 id="section-4">5. Testing</h2>
+<h3>5.1 Cobertura Mínima</h3>
+<ul>
+<li><strong>Tests Unitarios:</strong> 70 tests obligatorios (actualmente 70/70 ✅)</li>
+<li><strong>Tests de Humo:</strong> 66 tests obligatorios (actualmente 66/66 ✅)</li>
+<li><strong>Tests E2E:</strong> 26 módulos validados (actualmente 26/26 ✅)</li>
+<li><strong>Simulador Experto:</strong> 37 checks (actualmente 37/37 ✅)</li>
+</ul>
+
+<h3>5.2 Ejecución de Tests</h3>
+<pre><code># Antes de cada commit
+php tests/unit_test.php
+php tests/smoke_test.php
+node tests/e2e/run_audit.js
+
+# Validar 0 FATAL, 0 SIN_LAYOUT</code></pre>
+
+<h2 id="section-5">6. Documentación</h2>
+<h3>6.1 Comentarios en Código</h3>
+<pre><code>/**
+ * Descripción breve del método
+ * 
+ * @param int $planId ID del plan estratégico
+ * @param string $metodología Metodología (BSC, OKR, etc.)
+ * @return array Datos del plan creado
+ * @throws \Exception Si el plan ya existe
+ */
+public function crearPlan(int $planId, string $metodologia): array {
+    // ...
+}</code></pre>
+
+<h3>6.2 Documentación de APIs</h3>
+<p>Todos los endpoints deben documentarse en OpenAPI 3.0:</p>
+<pre><code>/api/health:
+  get:
+    summary: Estado del sistema
+    responses:
+      200:
+        description: Sistema operativo
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                version:
+                  type: string</code></pre>
+
+<h2 id="section-6">7. Despliegue</h2>
+<h3>7.1 Checklist Pre-Despliegue</h3>
+<ol>
+<li>✅ Todos los tests pasan (0 FATAL)</li>
+<li>✅ Backup de base de datos realizado</li>
+<li>✅ Documentación actualizada</li>
+<li>✅ Variables de entorno configuradas</li>
+<li>✅ Permisos de archivos correctos (755 dirs, 644 files)</li>
+</ol>
+
+<h3>7.2 Script de Despliegue</h3>
+<pre><code>#!/bin/bash
+# deploy-staging.sh
+
+# 1. Backup
+mysqldump -u $DB_USER -p$DB_PASS $DB_NAME > backup.sql
+
+# 2. Sincronizar
+rsync -avz --delete public/ user@server:/var/www/estrategia/public/
+rsync -avz --delete lib/ user@server:/var/www/estrategia/lib/
+rsync -avz --delete src/ user@server:/var/www/estrategia/src/
+rsync -avz --delete templates/ user@server:/var/www/estrategia/templates/
+
+# 3. Reiniciar servicios
+systemctl restart php8.5-fpm
+
+# 4. Verificar
+curl -s http://server:6611/api/health</code></pre>
+
+<h2 id="section-7">8. Reglas de Oro</h2>
+<div class="warning-box">
+<strong>⚠️ NUNCA:</strong>
+<ul style="margin:10px 0 0 20px">
+<li>Usar <code>header("Location: /")</code> para denegar acceso → usar 403</li>
+<li>Concatenar strings de usuario en SQL</li>
+<li>Colocar <code>require_once</code> antes de <code>declare(strict_types=1)</code></li>
+<li>Crear módulo sin registrarlo en PHVA</li>
+<li>Usar <code>killall -9</code> en procesos del servidor</li>
+<li>Modificar en producción sin backup previo</li>
+</ul>
+</div>
+        </main>
+    </div>
+</body>
+</html>

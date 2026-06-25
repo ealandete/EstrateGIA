@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Base de Datos — EstrateGIA v3.0</title>
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #0d47a1;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --purple: #6f42c1;
+            --gray-100: #f8f9fa;
+            --gray-200: #e9ecef;
+            --gray-600: #6c757d;
+            --gray-900: #212529;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.7;
+            color: var(--gray-900);
+            background: var(--gray-100);
+        }
+        .doc-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+        }
+        .doc-header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .doc-header p { font-size: 1.2rem; opacity: 0.9; }
+        .doc-meta {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        .doc-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            max-width: 1400px;
+            margin: 0 auto;
+            gap: 30px;
+            padding: 30px;
+        }
+        .toc {
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .toc h3 {
+            font-size: 1rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        .toc ul { list-style: none; }
+        .toc li { margin-bottom: 8px; }
+        .toc a {
+            color: var(--gray-600);
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: block;
+            padding: 4px 0;
+            transition: color 0.2s;
+        }
+        .toc a:hover { color: var(--primary); }
+        .toc-h3 { padding-left: 15px; }
+        .doc-content {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        h2 {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin: 40px 0 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--gray-200);
+        }
+        h3 {
+            font-size: 1.3rem;
+            color: var(--gray-900);
+            margin: 30px 0 15px;
+        }
+        h4 {
+            font-size: 1.1rem;
+            margin: 20px 0 10px;
+        }
+        p { margin-bottom: 15px; }
+        ul, ol { margin: 15px 0 15px 25px; }
+        li { margin-bottom: 8px; }
+        code {
+            background: var(--gray-100);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        th {
+            background: var(--gray-100);
+            font-weight: 600;
+        }
+        .diagram {
+            background: white;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        .diagram-title {
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+        .flow-box {
+            display: inline-block;
+            padding: 15px 25px;
+            border-radius: 8px;
+            margin: 10px;
+            font-weight: 500;
+            color: white;
+        }
+        .flow-arrow {
+            font-size: 1.5rem;
+            color: var(--gray-600);
+            margin: 0 10px;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid var(--primary);
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid var(--warning);
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid var(--success);
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        .screenshot {
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 20px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .screenshot img {
+            width: 100%;
+            display: block;
+        }
+        .screenshot-caption {
+            background: var(--gray-100);
+            padding: 10px 15px;
+            font-size: 0.85rem;
+            color: var(--gray-600);
+            text-align: center;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-primary { background: var(--primary); color: white; }
+        .badge-success { background: var(--success); color: white; }
+        .badge-warning { background: var(--warning); color: var(--gray-900); }
+        .badge-danger { background: var(--danger); color: white; }
+        @media print {
+            .toc { display: none; }
+            .doc-container { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .doc-container { grid-template-columns: 1fr; }
+            .toc { position: static; }
+        }
+    </style>
+</head>
+<body>
+    <div class="doc-header">
+        <h1>Manual de Base de Datos</h1>
+        <p>Modelo ER, tablas, índices y optimización</p>
+        <div class="doc-meta">
+            <span><i class="fas fa-calendar"></i> 22/06/2026</span>
+            <span><i class="fas fa-code-branch"></i> v3.0</span>
+            <span><i class="fas fa-file-lines"></i> 52 páginas</span>
+        </div>
+    </div>
+    <div class="doc-container">
+        <nav class="toc"><h3>Índice</h3><ul><li class='toc-h2'><a href='#section-0'>1. Modelo Entidad-Relación</a></li><li class='toc-h2'><a href='#section-1'>2. Módulos de Tablas</a></li><li class='toc-h2'><a href='#section-2'>3. Índices y Optimización</a></li><li class='toc-h3'><a href='#section-3'>3.1 Índices Definidos</a></li><li class='toc-h3'><a href='#section-4'>3.2 Foreign Keys</a></li><li class='toc-h2'><a href='#section-5'>4. Triggers</a></li><li class='toc-h2'><a href='#section-6'>5. Backups</a></li><li class='toc-h3'><a href='#section-7'>5.1 Script de Backup Automático</a></li><li class='toc-h3'><a href='#section-8'>5.2 Restauración</a></li></ul></nav>
+        <main class="doc-content">
+            <h2 id="section-0">1. Modelo Entidad-Relación</h2>
+<p>La base de datos de EstrateGIA contiene 94 tablas organizadas por módulos funcionales, con 124 foreign keys que garantizan la integridad referencial.</p>
+
+<div class="diagram">
+<div class="diagram-title">Diagrama ER Simplificado — Módulo Planeación</div>
+<svg width="700" height="350" viewBox="0 0 700 350">
+  <!-- plan_planes -->
+  <rect x="50" y="50" width="180" height="120" rx="4" fill="white" stroke="#1a73e8" stroke-width="2"/>
+  <rect x="50" y="50" width="180" height="25" rx="4" fill="#1a73e8"/>
+  <text x="140" y="67" text-anchor="middle" fill="white" font-weight="bold" font-size="12">plan_planes</text>
+  <text x="60" y="90" font-size="10">🔑 plan_id (PK)</text>
+  <text x="60" y="105" font-size="10">📝 plan_nombre</text>
+  <text x="60" y="120" font-size="10">📅 plan_periodo_inicio</text>
+  <text x="60" y="135" font-size="10">📅 plan_periodo_fin</text>
+  <text x="60" y="150" font-size="10">🔗 plan_empresa_id (FK)</text>
+  
+  <!-- plan_objetivos -->
+  <rect x="280" y="50" width="180" height="140" rx="4" fill="white" stroke="#28a745" stroke-width="2"/>
+  <rect x="280" y="50" width="180" height="25" rx="4" fill="#28a745"/>
+  <text x="370" y="67" text-anchor="middle" fill="white" font-weight="bold" font-size="12">plan_objetivos</text>
+  <text x="290" y="90" font-size="10">🔑 objetivo_id (PK)</text>
+  <text x="290" y="105" font-size="10">🔗 objetivo_plan_id (FK)</text>
+  <text x="290" y="120" font-size="10">📝 objetivo_nombre</text>
+  <text x="290" y="135" font-size="10">📋 objetivo_perspectiva</text>
+  <text x="290" y="150" font-size="10">📝 objetivo_descripcion</text>
+  <text x="290" y="165" font-size="10">📊 objetivo_progreso</text>
+  
+  <!-- ind_indicadores -->
+  <rect x="510" y="50" width="180" height="160" rx="4" fill="white" stroke="#ffc107" stroke-width="2"/>
+  <rect x="510" y="50" width="180" height="25" rx="4" fill="#ffc107"/>
+  <text x="600" y="67" text-anchor="middle" fill="#333" font-weight="bold" font-size="12">ind_indicadores</text>
+  <text x="520" y="90" font-size="10">🔑 indicador_id (PK)</text>
+  <text x="520" y="105" font-size="10">🔗 indicador_objetivo_id (FK)</text>
+  <text x="520" y="120" font-size="10">📝 indicador_nombre</text>
+  <text x="520" y="135" font-size="10">📐 indicador_formula</text>
+  <text x="520" y="150" font-size="10">📏 indicador_unidad_medida</text>
+  <text x="520" y="165" font-size="10">🎯 indicador_meta</text>
+  <text x="520" y="180" font-size="10">📊 indicador_rango_min</text>
+  <text x="520" y="195" font-size="10">📊 indicador_rango_max</text>
+  
+  <!-- Relaciones -->
+  <line x1="230" y1="110" x2="280" y2="110" stroke="#666" stroke-width="2"/>
+  <text x="255" y="105" text-anchor="middle" font-size="10" fill="#666">1:N</text>
+  
+  <line x1="460" y1="110" x2="510" y2="110" stroke="#666" stroke-width="2"/>
+  <text x="485" y="105" text-anchor="middle" font-size="10" fill="#666">1:N</text>
+  
+  <!-- Leyenda -->
+  <rect x="50" y="250" width="640" height="80" rx="4" fill="#f8f9fa" stroke="#e0e0e0"/>
+  <text x="70" y="275" font-size="11" font-weight="bold">Leyenda:</text>
+  <text x="70" y="295" font-size="10">🔑 Primary Key</text>
+  <text x="200" y="295" font-size="10">🔗 Foreign Key</text>
+  <text x="330" y="295" font-size="10">📝 Campo de texto</text>
+  <text x="460" y="295" font-size="10">📅 Campo de fecha</text>
+  <text x="590" y="295" font-size="10">📊 Campo numérico</text>
+</svg>
+</div>
+
+<h2 id="section-1">2. Módulos de Tablas</h2>
+<table>
+<thead><tr><th>Prefijo</th><th>Módulo</th><th>Tablas</th><th>Descripción</th></tr></thead>
+<tbody>
+<tr><td><code>plan_</code></td><td>Planeación</td><td>12</td><td>Planes, objetivos, estrategias, fases</td></tr>
+<tr><td><code>ind_</code></td><td>Indicadores</td><td>8</td><td>KPIs, mediciones, evaluaciones</td></tr>
+<tr><td><code>proc_</code></td><td>Procesos</td><td>6</td><td>Macroprocesos, procesos, tareas</td></tr>
+<tr><td><code>doc_</code></td><td>Documentos</td><td>5</td><td>Documentos ISO, versiones, aprobación</td></tr>
+<tr><td><code>cal_</code></td><td>Calidad</td><td>8</td><td>NC, riesgos, PAMEC, acreditación</td></tr>
+<tr><td><code>sst_</code></td><td>SST</td><td>10</td><td>Decreto 1072, peligros, incidentes</td></tr>
+<tr><td><code>amb_</code></td><td>Ambiental</td><td>8</td><td>ISO 14001, aspectos, auditorías</td></tr>
+<tr><td><code>sys_</code></td><td>Sistema</td><td>7</td><td>Usuarios, roles, permisos, logs</td></tr>
+<tr><td><code>soporte_</code></td><td>Soporte</td><td>4</td><td>Tickets, respuestas, KB</td></tr>
+<tr><td><code>fin_</code></td><td>Financiero</td><td>3</td><td>Presupuesto, ejecución</td></tr>
+<tr><td><code>prov_</code></td><td>Proveedores</td><td>5</td><td>Proveedores, contratos, evaluaciones</td></tr>
+</tbody>
+</table>
+
+<h2 id="section-2">3. Índices y Optimización</h2>
+<h3>3.1 Índices Definidos</h3>
+<pre><code>-- Índices para búsquedas frecuentes
+CREATE INDEX idx_objetivo_plan ON plan_objetivos(objetivo_plan_id);
+CREATE INDEX idx_indicador_objetivo ON ind_indicadores(indicador_objetivo_id);
+CREATE INDEX idx_medicion_indicador ON ind_mediciones(medicion_indicador_id);
+CREATE INDEX idx_usuario_empresa ON sys_usuarios(usuario_empresa_id);
+CREATE INDEX idx_ticket_estado ON soporte_tickets(estado);
+CREATE INDEX idx_documento_empresa ON doc_documentos(doc_empresa_id);
+CREATE INDEX idx_proceso_macro ON proc_procesos(proceso_macro_id);
+CREATE INDEX idx_nc_empresa ON cal_no_conformidades(nc_empresa_id);</code></pre>
+
+<h3>3.2 Foreign Keys</h3>
+<p>El sistema utiliza 124 foreign keys para garantizar integridad referencial:</p>
+<pre><code>-- Ejemplos de FK
+ALTER TABLE plan_objetivos 
+  ADD CONSTRAINT fk_objetivo_plan 
+  FOREIGN KEY (objetivo_plan_id) REFERENCES plan_planes(plan_id) 
+  ON DELETE CASCADE;
+
+ALTER TABLE ind_indicadores 
+  ADD CONSTRAINT fk_indicador_objetivo 
+  FOREIGN KEY (indicador_objetivo_id) REFERENCES plan_objetivos(objetivo_id) 
+  ON DELETE CASCADE;
+
+ALTER TABLE ind_mediciones 
+  ADD CONSTRAINT fk_medicion_indicador 
+  FOREIGN KEY (medicion_indicador_id) REFERENCES ind_indicadores(indicador_id) 
+  ON DELETE CASCADE;</code></pre>
+
+<h2 id="section-3">4. Triggers</h2>
+<p>Se utilizan triggers para automatizar cálculos y mantener consistencia:</p>
+<pre><code>-- Trigger: Actualizar progreso de objetivo al insertar medición
+DELIMITER //
+CREATE TRIGGER trg_actualizar_progreso_objetivo
+AFTER INSERT ON ind_mediciones
+FOR EACH ROW
+BEGIN
+  UPDATE plan_objetivos 
+  SET objetivo_progreso = (
+    SELECT AVG(m.medicion_valor) 
+    FROM ind_mediciones m 
+    JOIN ind_indicadores i ON m.medicion_indicador_id = i.indicador_id
+    WHERE i.indicador_objetivo_id = (
+      SELECT indicador_objetivo_id FROM ind_indicadores 
+      WHERE indicador_id = NEW.medicion_indicador_id
+    )
+  )
+  WHERE objetivo_id = (
+    SELECT indicador_objetivo_id FROM ind_indicadores 
+    WHERE indicador_id = NEW.medicion_indicador_id
+  );
+END//
+DELIMITER ;</code></pre>
+
+<h2 id="section-4">5. Backups</h2>
+<h3>5.1 Script de Backup Automático</h3>
+<pre><code>#!/bin/bash
+# scripts/backup.sh
+
+DB_NAME="estrategia_v1"
+DB_USER="emilio"
+DB_PASS="s1gma"
+BACKUP_DIR="/home/emilio/estrategia/backups"
+DATE=$(date +%Y%m%d_%H%M%S)
+
+# Crear backup
+mysqldump -u $DB_USER -p$DB_PASS $DB_NAME > $BACKUP_DIR/backup_$DATE.sql
+
+# Comprimir
+gzip $BACKUP_DIR/backup_$DATE.sql
+
+# Eliminar backups antiguos (>30 días)
+find $BACKUP_DIR -name "backup_*.sql.gz" -mtime +30 -delete
+
+echo "Backup completado: backup_$DATE.sql.gz"</code></pre>
+
+<h3>5.2 Restauración</h3>
+<pre><code># Descomprimir
+gunzip backup_20260618_120000.sql.gz
+
+# Restaurar
+mysql -u emilio -p estrategia_v1 < backup_20260618_120000.sql</code></pre>
+        </main>
+    </div>
+</body>
+</html>

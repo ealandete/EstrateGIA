@@ -1,0 +1,54 @@
+# Dependencias
+node_modules/
+vendor/
+composer.lock
+
+# Configuración sensible
+.env
+.env.*
+*.local.php
+config.local.php
+
+# Logs
+logs/*.log
+!logs/.gitkeep
+
+# Uploads
+uploads/*
+!uploads/.gitkeep
+
+# Build
+dist/
+build/
+*.zip
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Cache y temporales
+tmp/
+temp/
+*.cache
+*.tmp
+
+# Dependencias móviles
+mobile_app/android/app/build/
+mobile_app/android/.gradle/
+mobile_app/ios/Pods/
+mobile_app/ios/build/
+*.jks
+*.keystore
+
+# Reportes generados
+reports/
+*.pdf
+!samples/*.pdf
+.github/workflows/

@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metodología Unificada — EstrateGIA v3.0</title>
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #0d47a1;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --purple: #6f42c1;
+            --gray-100: #f8f9fa;
+            --gray-200: #e9ecef;
+            --gray-600: #6c757d;
+            --gray-900: #212529;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.7;
+            color: var(--gray-900);
+            background: var(--gray-100);
+        }
+        .doc-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+        }
+        .doc-header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .doc-header p { font-size: 1.2rem; opacity: 0.9; }
+        .doc-meta {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        .doc-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            max-width: 1400px;
+            margin: 0 auto;
+            gap: 30px;
+            padding: 30px;
+        }
+        .toc {
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .toc h3 {
+            font-size: 1rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        .toc ul { list-style: none; }
+        .toc li { margin-bottom: 8px; }
+        .toc a {
+            color: var(--gray-600);
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: block;
+            padding: 4px 0;
+            transition: color 0.2s;
+        }
+        .toc a:hover { color: var(--primary); }
+        .toc-h3 { padding-left: 15px; }
+        .doc-content {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        h2 {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin: 40px 0 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--gray-200);
+        }
+        h3 {
+            font-size: 1.3rem;
+            color: var(--gray-900);
+            margin: 30px 0 15px;
+        }
+        h4 {
+            font-size: 1.1rem;
+            margin: 20px 0 10px;
+        }
+        p { margin-bottom: 15px; }
+        ul, ol { margin: 15px 0 15px 25px; }
+        li { margin-bottom: 8px; }
+        code {
+            background: var(--gray-100);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        th {
+            background: var(--gray-100);
+            font-weight: 600;
+        }
+        .diagram {
+            background: white;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        .diagram-title {
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+        .flow-box {
+            display: inline-block;
+            padding: 15px 25px;
+            border-radius: 8px;
+            margin: 10px;
+            font-weight: 500;
+            color: white;
+        }
+        .flow-arrow {
+            font-size: 1.5rem;
+            color: var(--gray-600);
+            margin: 0 10px;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid var(--primary);
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid var(--warning);
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid var(--success);
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        .screenshot {
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 20px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .screenshot img {
+            width: 100%;
+            display: block;
+        }
+        .screenshot-caption {
+            background: var(--gray-100);
+            padding: 10px 15px;
+            font-size: 0.85rem;
+            color: var(--gray-600);
+            text-align: center;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-primary { background: var(--primary); color: white; }
+        .badge-success { background: var(--success); color: white; }
+        .badge-warning { background: var(--warning); color: var(--gray-900); }
+        .badge-danger { background: var(--danger); color: white; }
+        @media print {
+            .toc { display: none; }
+            .doc-container { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .doc-container { grid-template-columns: 1fr; }
+            .toc { position: static; }
+        }
+    </style>
+</head>
+<body>
+    <div class="doc-header">
+        <h1>Metodología Unificada</h1>
+        <p>PHVA, SafeQuery, checklist y reglas de oro</p>
+        <div class="doc-meta">
+            <span><i class="fas fa-calendar"></i> 22/06/2026</span>
+            <span><i class="fas fa-code-branch"></i> v3.0</span>
+            <span><i class="fas fa-file-lines"></i> 24 páginas</span>
+        </div>
+    </div>
+    <div class="doc-container">
+        <nav class="toc"><h3>Índice</h3><ul><li class='toc-h2'><a href='#section-0'>1. Introducción a la Metodología EstrateGIA</a></li><li class='toc-h2'><a href='#section-1'>2. Ciclo PHVA (Planear-Hacer-Verificar-Actuar)</a></li><li class='toc-h3'><a href='#section-2'>2.1 Planear (P)</a></li><li class='toc-h3'><a href='#section-3'>2.2 Hacer (H)</a></li><li class='toc-h3'><a href='#section-4'>2.3 Verificar (V)</a></li><li class='toc-h3'><a href='#section-5'>2.4 Actuar (A)</a></li><li class='toc-h2'><a href='#section-6'>3. SafeQuery — Protección SQL</a></li><li class='toc-h3'><a href='#section-7'>3.1 Arquitectura de SafeQuery</a></li><li class='toc-h3'><a href='#section-8'>3.2 Métodos Disponibles</a></li><li class='toc-h3'><a href='#section-9'>3.3 Ejemplo de Uso</a></li><li class='toc-h2'><a href='#section-10'>4. Checklist de 13 Pasos para Nuevos Módulos</a></li><li class='toc-h2'><a href='#section-11'>5. Testing E2E con Playwright</a></li><li class='toc-h3'><a href='#section-12'>5.1 Ejecución de Tests</a></li><li class='toc-h3'><a href='#section-13'>5.2 Interpretación de Resultados</a></li><li class='toc-h2'><a href='#section-14'>6. Reglas de Oro</a></li><li class='toc-h2'><a href='#section-15'>7. Documentación Obligatoria</a></li><li class='toc-h2'><a href='#section-16'>8. Recursos Clave</a></li></ul></nav>
+        <main class="doc-content">
+            <h2 id="section-0">1. Introducción a la Metodología EstrateGIA</h2>
+<p>EstrateGIA v2.1 implementa una metodología unificada que combina las mejores prácticas de gestión de calidad, desarrollo ágil y mejora continua. Este documento describe los componentes clave de la metodología y cómo aplicarlos en el desarrollo y mantenimiento del sistema.</p>
+
+<div class="info-box">
+<strong>🎯 Objetivo:</strong> Establecer un marco de trabajo consistente que garantice calidad, seguridad y mantenibilidad en todas las fases del desarrollo.
+</div>
+
+<h2 id="section-1">2. Ciclo PHVA (Planear-Hacer-Verificar-Actuar)</h2>
+<p>El ciclo PHVA (también conocido como ciclo Deming) es el núcleo de la metodología de mejora continua de EstrateGIA.</p>
+
+<div class="diagram">
+<div class="diagram-title">Ciclo PHVA — Mejora Continua</div>
+<svg width="600" height="400" viewBox="0 0 600 400">
+  <!-- Círculo central -->
+  <circle cx="300" cy="200" r="150" fill="none" stroke="#e0e0e0" stroke-width="2"/>
+  
+  <!-- P - Planear -->
+  <path d="M 300 50 A 150 150 0 0 1 450 200" fill="#1a73e8" opacity="0.2"/>
+  <text x="375" y="120" text-anchor="middle" font-size="24" font-weight="bold" fill="#1a73e8">P</text>
+  <text x="375" y="145" text-anchor="middle" font-size="14" fill="#1a73e8">Planear</text>
+  
+  <!-- H - Hacer -->
+  <path d="M 450 200 A 150 150 0 0 1 300 350" fill="#28a745" opacity="0.2"/>
+  <text x="375" y="280" text-anchor="middle" font-size="24" font-weight="bold" fill="#28a745">H</text>
+  <text x="375" y="305" text-anchor="middle" font-size="14" fill="#28a745">Hacer</text>
+  
+  <!-- V - Verificar -->
+  <path d="M 300 350 A 150 150 0 0 1 150 200" fill="#ffc107" opacity="0.2"/>
+  <text x="225" y="280" text-anchor="middle" font-size="24" font-weight="bold" fill="#333">V</text>
+  <text x="225" y="305" text-anchor="middle" font-size="14" fill="#333">Verificar</text>
+  
+  <!-- A - Actuar -->
+  <path d="M 150 200 A 150 150 0 0 1 300 50" fill="#dc3545" opacity="0.2"/>
+  <text x="225" y="120" text-anchor="middle" font-size="24" font-weight="bold" fill="#dc3545">A</text>
+  <text x="225" y="145" text-anchor="middle" font-size="14" fill="#dc3545">Actuar</text>
+  
+  <!-- Flechas circulares -->
+  <path d="M 300 60 L 295 70 L 305 70 Z" fill="#1a73e8"/>
+  <path d="M 440 200 L 430 195 L 430 205 Z" fill="#28a745"/>
+  <path d="M 300 340 L 305 330 L 295 330 Z" fill="#ffc107"/>
+  <path d="M 160 200 L 170 205 L 170 195 Z" fill="#dc3545"/>
+  
+  <!-- Centro -->
+  <circle cx="300" cy="200" r="40" fill="white" stroke="#1a73e8" stroke-width="3"/>
+  <text x="300" y="195" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a73e8">Mejora</text>
+  <text x="300" y="210" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a73e8">Continua</text>
+</svg>
+</div>
+
+<h3>2.1 Planear (P)</h3>
+<p>Fase de planificación estratégica donde se definen objetivos, indicadores y planes de acción.</p>
+<ul>
+<li><strong>Módulos:</strong> Planeación, IA Asistente, Calendario</li>
+<li><strong>Actividades:</strong> Definir objetivos estratégicos, establecer KPIs, planificar recursos</li>
+<li><strong>Entregables:</strong> Plan estratégico documentado, indicadores definidos</li>
+</ul>
+
+<h3>2.2 Hacer (H)</h3>
+<p>Fase de ejecución donde se implementan los planes y se recopilan datos.</p>
+<ul>
+<li><strong>Módulos:</strong> Indicadores, Procesos, Documentos, SST, Ambiental</li>
+<li><strong>Actividades:</strong> Registrar mediciones, ejecutar procesos, documentar procedimientos</li>
+<li><strong>Entregables:</strong> Datos de mediciones, procesos documentados</li>
+</ul>
+
+<h3>2.3 Verificar (V)</h3>
+<p>Fase de evaluación donde se analizan los resultados contra los planes.</p>
+<ul>
+<li><strong>Módulos:</strong> Evaluación, Calidad, PAMEC, Satisfacción</li>
+<li><strong>Actividades:</strong> Analizar indicadores, realizar auditorías, evaluar desempeño</li>
+<li><strong>Entregables:</strong> Reportes de evaluación, hallazgos de auditoría</li>
+</ul>
+
+<h3>2.4 Actuar (A)</h3>
+<p>Fase de mejora donde se implementan acciones correctivas y preventivas.</p>
+<ul>
+<li><strong>Módulos:</strong> NC, Riesgos, Proveedores, Soporte</li>
+<li><strong>Actividades:</strong> Gestionar no conformidades, mitigar riesgos, mejorar procesos</li>
+<li><strong>Entregables:</strong> Acciones correctivas implementadas, riesgos mitigados</li>
+</ul>
+
+<h2 id="section-2">3. SafeQuery — Protección SQL</h2>
+<p>SafeQuery es un trait PHP que encapsula todas las operaciones de base de datos con prepared statements, eliminando el riesgo de inyección SQL.</p>
+
+<h3>3.1 Arquitectura de SafeQuery</h3>
+<div class="diagram">
+<div class="diagram-title">Flujo de SafeQuery</div>
+<svg width="700" height="200" viewBox="0 0 700 200">
+  <rect x="20" y="70" width="120" height="60" rx="8" fill="#1a73e8"/>
+  <text x="80" y="105" text-anchor="middle" fill="white" font-size="12">Controlador</text>
+  
+  <rect x="180" y="70" width="120" height="60" rx="8" fill="#28a745"/>
+  <text x="240" y="105" text-anchor="middle" fill="white" font-size="12">SafeQuery</text>
+  
+  <rect x="340" y="70" width="120" height="60" rx="8" fill="#ffc107"/>
+  <text x="400" y="105" text-anchor="middle" fill="#333" font-size="12">PDO</text>
+  
+  <rect x="500" y="70" width="120" height="60" rx="8" fill="#6f42c1"/>
+  <text x="560" y="105" text-anchor="middle" fill="white" font-size="12">MySQL</text>
+  
+  <line x1="140" y1="100" x2="180" y2="100" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="160" y="95" text-anchor="middle" font-size="10">safe()</text>
+  
+  <line x1="300" y1="100" x2="340" y2="100" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="320" y="95" text-anchor="middle" font-size="10">prepare()</text>
+  
+  <line x1="460" y1="100" x2="500" y2="100" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="480" y="95" text-anchor="middle" font-size="10">execute()</text>
+  
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#333"/>
+    </marker>
+  </defs>
+</svg>
+</div>
+
+<h3>3.2 Métodos Disponibles</h3>
+<table>
+<thead><tr><th>Método</th><th>Propósito</th><th>Retorna</th></tr></thead>
+<tbody>
+<tr><td><code>safe($sql, $params)</code></td><td>Ejecutar consulta SELECT</td><td>array de filas</td></tr>
+<tr><td><code>safeOne($sql, $params)</code></td><td>Ejecutar consulta SELECT única</td><td>array o null</td></tr>
+<tr><td><code>safeExec($sql, $params)</code></td><td>Ejecutar INSERT/UPDATE/DELETE</td><td>filas afectadas</td></tr>
+<tr><td><code>safeInsert($table, $data)</code></td><td>Insertar registro</td><td>ID insertado</td></tr>
+</tbody>
+</table>
+
+<h3>3.3 Ejemplo de Uso</h3>
+<pre><code>class PlanController {
+    use \SafeQuery;
+    
+    public function obtenerPlanes(): array {
+        $sql = "SELECT * FROM plan_planes WHERE plan_empresa_id = ?";
+        return $this->safe($sql, [$_SESSION['empresa_id']]);
+    }
+    
+    public function crearPlan(array $datos): int {
+        return $this->safeInsert('plan_planes', $datos);
+    }
+}</code></pre>
+
+<h2 id="section-3">4. Checklist de 13 Pasos para Nuevos Módulos</h2>
+<p>Cada nuevo módulo debe completar estos 13 pasos antes de ser considerado listo para producción:</p>
+
+<table>
+<thead><tr><th>#</th><th>Paso</th><th>Responsable</th><th>Verificación</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Crear controlador con <code>use \SafeQuery;</code></td><td>Desarrollador</td><td><code>grep -l "use.*SafeQuery"</code></td></tr>
+<tr><td>2</td><td>Implementar métodos CRUD básicos</td><td>Desarrollador</td><td>Revisión de código</td></tr>
+<tr><td>3</td><td>Registrar rutas en <code>index.php</code></td><td>Desarrollador</td><td>Prueba manual</td></tr>
+<tr><td>4</td><td>Crear template con layout</td><td>Desarrollador</td><td>Inspección visual</td></tr>
+<tr><td>5</td><td>Agregar al menú sidebar</td><td>Desarrollador</td><td>Verificar en UI</td></tr>
+<tr><td>6</td><td>Usar <code>htmlspecialchars()</code> en outputs</td><td>Desarrollador</td><td><code>grep -L "htmlspecialchars"</code></td></tr>
+<tr><td>7</td><td>Incluir <code>declare(strict_types=1);</code></td><td>Desarrollador</td><td><code>php -l archivo.php</code></td></tr>
+<tr><td>8</td><td>No usar <code>$this->db->query()</code> directo</td><td>Desarrollador</td><td><code>grep -n "db->query"</code></td></tr>
+<tr><td>9</td><td>No pasar null a funciones PHP</td><td>Desarrollador</td><td>Revisión de código</td></tr>
+<tr><td>10</td><td>Ejecutar <code>php -l</code> sin errores</td><td>Desarrollador</td><td><code>php -l archivo.php</code></td></tr>
+<tr><td>11</td><td>Ejecutar auditoría E2E</td><td>QA</td><td><code>node tests/e2e/run_audit.js</code></td></tr>
+<tr><td>12</td><td>Verificar 0 FATAL, 0 SIN_LAYOUT</td><td>QA</td><td>Revisar reporte</td></tr>
+<tr><td>13</td><td>Documentar cambios en este archivo</td><td>Desarrollador</td><td>Revisión de documentación</td></tr>
+</tbody>
+</table>
+
+<h2 id="section-4">5. Testing E2E con Playwright</h2>
+<p>El framework de pruebas E2E utiliza Playwright para simular interacciones de usuario reales en el navegador.</p>
+
+<h3>5.1 Ejecución de Tests</h3>
+<pre><code># Auditoría completa (26 módulos)
+node tests/e2e/run_audit.js
+
+# Auditoría rápida (10 módulos)
+node tests/e2e/run_audit.js --fast
+
+# Con capturas de pantalla
+node tests/e2e/run_audit.js --screens</code></pre>
+
+<h3>5.2 Interpretación de Resultados</h3>
+<table>
+<thead><tr><th>Estado</th><th>Significado</th><th>Acción</th></tr></thead>
+<tbody>
+<tr><td><span class="badge badge-success">OK</span></td><td>Página carga correctamente</td><td>Sin acción</td></tr>
+<tr><td><span class="badge badge-danger">FATAL</span></td><td>Error fatal de PHP</td><td>Corregir error</td></tr>
+<tr><td><span class="badge badge-warning">WARNING</span></td><td>Warning de PHP</td><td>Revisar y corregir</td></tr>
+<tr><td><span class="badge badge-primary">SIN_LAYOUT</span></td><td>Falta CSS/layout</td><td>Verificar ob_start/require</td></tr>
+<tr><td><span class="badge" style="background:#6c757d;color:white">403</span></td><td>Bloqueo por permisos</td><td>Esperado si no tiene acceso</td></tr>
+<tr><td><span class="badge" style="background:#6c757d;color:white">LOGIN</span></td><td>Redirigido a login</td><td>Sesión expirada</td></tr>
+<tr><td><span class="badge" style="background:#6c757d;color:white">404</span></td><td>No encontrado</td><td>Verificar ruta</td></tr>
+</tbody>
+</table>
+
+<h2 id="section-5">6. Reglas de Oro</h2>
+<div class="warning-box">
+<strong>⚠️ NUNCA hacer:</strong>
+<ul style="margin:10px 0 0 20px">
+<li>Usar <code>header("Location: /")</code> para denegar acceso → usar <code>http_response_code(403)</code></li>
+<li>Concatenar strings de usuario en SQL → usar SafeQuery</li>
+<li>Colocar <code>require_once</code> antes de <code>declare(strict_types=1)</code></li>
+<li>Crear módulo sin registrarlo en PHVA</li>
+<li>Usar <code>killall -9</code> en procesos del servidor</li>
+<li>Modificar en producción sin backup previo</li>
+<li>Pasar null a <code>htmlspecialchars()</code>, <code>strtotime()</code>, <code>number_format()</code></li>
+</ul>
+</div>
+
+<h2 id="section-6">7. Documentación Obligatoria</h2>
+<p>Cada cambio debe documentarse en:</p>
+<ul>
+<li><strong>ContextoGeneral/99_METODOLOGIA_ESTRATEGIA.md</strong> — Metodología unificada</li>
+<li><strong>ContextoGeneral/99_CAMBIOS_v3.0.md</strong> — Registro de cambios</li>
+<li><strong>public/docs/html/</strong> — Manuales HTML actualizados</li>
+</ul>
+
+<h2 id="section-7">8. Recursos Clave</h2>
+<table>
+<thead><tr><th>Recurso</th><th>Ubicación</th><th>Propósito</th></tr></thead>
+<tbody>
+<tr><td>SafeQuery trait</td><td><code>lib/SafeQuery.php</code></td><td>Protección SQL</td></tr>
+<tr><td>Auth</td><td><code>src/Auth.php</code></td><td>Login, 2FA, guard()</td></tr>
+<tr><td>EstrateGiaCore</td><td><code>lib/EstrateGiaCore.php</code></td><td>DB, fetchOne, fetchAll</td></tr>
+<tr><td>E2E Helper</td><td><code>tests/e2e/helper.js</code></td><td>USERS, ALL_MODULES, validatePage()</td></tr>
+<tr><td>E2E Runner</td><td><code>tests/e2e/run_audit.js</code></td><td>Auditoría automática</td></tr>
+<tr><td>PHVA Controller</td><td><code>src/Controllers/PhvaController.php</code></td><td>Ciclo Deming</td></tr>
+<tr><td>Backup</td><td><code>scripts/backup.sh</code></td><td>Diario, 30d retención</td></tr>
+</tbody>
+</table>
+        </main>
+    </div>
+</body>
+</html>

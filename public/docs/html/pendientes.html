@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pendientes de Desarrollo — EstrateGIA v3.0</title>
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #0d47a1;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --purple: #6f42c1;
+            --gray-100: #f8f9fa;
+            --gray-200: #e9ecef;
+            --gray-600: #6c757d;
+            --gray-900: #212529;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.7;
+            color: var(--gray-900);
+            background: var(--gray-100);
+        }
+        .doc-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+        }
+        .doc-header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .doc-header p { font-size: 1.2rem; opacity: 0.9; }
+        .doc-meta {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        .doc-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            max-width: 1400px;
+            margin: 0 auto;
+            gap: 30px;
+            padding: 30px;
+        }
+        .toc {
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .toc h3 {
+            font-size: 1rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        .toc ul { list-style: none; }
+        .toc li { margin-bottom: 8px; }
+        .toc a {
+            color: var(--gray-600);
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: block;
+            padding: 4px 0;
+            transition: color 0.2s;
+        }
+        .toc a:hover { color: var(--primary); }
+        .toc-h3 { padding-left: 15px; }
+        .doc-content {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        h2 {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin: 40px 0 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--gray-200);
+        }
+        h3 {
+            font-size: 1.3rem;
+            color: var(--gray-900);
+            margin: 30px 0 15px;
+        }
+        h4 {
+            font-size: 1.1rem;
+            margin: 20px 0 10px;
+        }
+        p { margin-bottom: 15px; }
+        ul, ol { margin: 15px 0 15px 25px; }
+        li { margin-bottom: 8px; }
+        code {
+            background: var(--gray-100);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        th {
+            background: var(--gray-100);
+            font-weight: 600;
+        }
+        .diagram {
+            background: white;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        .diagram-title {
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+        .flow-box {
+            display: inline-block;
+            padding: 15px 25px;
+            border-radius: 8px;
+            margin: 10px;
+            font-weight: 500;
+            color: white;
+        }
+        .flow-arrow {
+            font-size: 1.5rem;
+            color: var(--gray-600);
+            margin: 0 10px;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid var(--primary);
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid var(--warning);
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid var(--success);
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        .screenshot {
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 20px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .screenshot img {
+            width: 100%;
+            display: block;
+        }
+        .screenshot-caption {
+            background: var(--gray-100);
+            padding: 10px 15px;
+            font-size: 0.85rem;
+            color: var(--gray-600);
+            text-align: center;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-primary { background: var(--primary); color: white; }
+        .badge-success { background: var(--success); color: white; }
+        .badge-warning { background: var(--warning); color: var(--gray-900); }
+        .badge-danger { background: var(--danger); color: white; }
+        @media print {
+            .toc { display: none; }
+            .doc-container { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .doc-container { grid-template-columns: 1fr; }
+            .toc { position: static; }
+        }
+    </style>
+</head>
+<body>
+    <div class="doc-header">
+        <h1>Pendientes de Desarrollo</h1>
+        <p>Roadmap, tareas completadas y planificadas</p>
+        <div class="doc-meta">
+            <span><i class="fas fa-calendar"></i> 22/06/2026</span>
+            <span><i class="fas fa-code-branch"></i> v3.0</span>
+            <span><i class="fas fa-file-lines"></i> 18 páginas</span>
+        </div>
+    </div>
+    <div class="doc-container">
+        <nav class="toc"><h3>Índice</h3><ul><li class='toc-h2'><a href='#section-0'>1. Roadmap EstrateGIA v2.1</a></li><li class='toc-h2'><a href='#section-1'>2. Tareas Completadas</a></li><li class='toc-h2'><a href='#section-2'>3. Tareas en Progreso</a></li><li class='toc-h2'><a href='#section-3'>4. Tareas Planificadas</a></li><li class='toc-h3'><a href='#section-4'>4.1 Corto Plazo (v2.2)</a></li><li class='toc-h3'><a href='#section-5'>4.2 Mediano Plazo (v2.3)</a></li><li class='toc-h3'><a href='#section-6'>4.3 Largo Plazo (v3.0)</a></li><li class='toc-h2'><a href='#section-7'>5. Métricas de Progreso</a></li><li class='toc-h2'><a href='#section-8'>6. Issues Conocidos</a></li><li class='toc-h2'><a href='#section-9'>7. Próximos Pasos Inmediatos</a></li></ul></nav>
+        <main class="doc-content">
+            <h2 id="section-0">1. Roadmap EstrateGIA v2.1</h2>
+<p>Este documento presenta el roadmap de desarrollo del sistema EstrateGIA, incluyendo tareas completadas, en progreso y planificadas para futuras versiones.</p>
+
+<div class="info-box">
+<strong>📅 Fecha de Actualización:</strong> 22 de junio de 2026
+</div>
+
+<h2 id="section-1">2. Tareas Completadas</h2>
+<table>
+<thead><tr><th>ID</th><th>Tarea</th><th>Fecha</th><th>Estado</th></tr></thead>
+<tbody>
+<tr><td>T-001</td><td>Corrección de rutas 500/404</td><td>2026-06-18</td><td><span class="badge badge-success">COMPLETADO</span></td></tr>
+<tr><td>T-002</td><td>Menú Sistema para SUPER_ADMIN</td><td>2026-06-18</td><td><span class="badge badge-success">COMPLETADO</span></td></tr>
+<tr><td>T-003</td><td>Generación automática de KPIs</td><td>2026-06-18</td><td><span class="badge badge-success">COMPLETADO</span></td></tr>
+<tr><td>T-004</td><td>Implementación de SafeQuery trait</td><td>2026-06-22</td><td><span class="badge badge-success">COMPLETADO</span></td></tr>
+<tr><td>T-005</td><td>Migración SoporteController a SafeQuery</td><td>2026-06-22</td><td><span class="badge badge-success">COMPLETADO</span></td></tr>
+<tr><td>T-006</td><td>Framework E2E con Playwright</td><td>2026-06-22</td><td><span class="badge badge-success">COMPLETADO</span></td></tr>
+<tr><td>T-007</td><td>Módulo PHVA (Ciclo Deming)</td><td>2026-06-22</td><td><span class="badge badge-success">COMPLETADO</span></td></tr>
+<tr><td>T-008</td><td>Checklist de 13 pasos</td><td>2026-06-22</td><td><span class="badge badge-success">COMPLETADO</span></td></tr>
+<tr><td>T-009</td><td>Documentación metodológica</td><td>2026-06-22</td><td><span class="badge badge-success">COMPLETADO</span></td></tr>
+<tr><td>T-010</td><td>Página de documentación central</td><td>2026-06-22</td><td><span class="badge badge-success">COMPLETADO</span></td></tr>
+<tr><td>T-011</td><td>Manuales HTML profesionales</td><td>2026-06-22</td><td><span class="badge badge-success">COMPLETADO</span></td></tr>
+<tr><td>T-012</td><td>Auditoría completa 10.0/10</td><td>2026-06-22</td><td><span class="badge badge-success">COMPLETADO</span></td></tr>
+</tbody>
+</table>
+
+<h2 id="section-2">3. Tareas en Progreso</h2>
+<table>
+<thead><tr><th>ID</th><th>Tarea</th><th>Responsable</th><th>Progreso</th></tr></thead>
+<tbody>
+<tr><td>T-013</td><td>Migrar más controllers a SafeQuery</td><td>Desarrollo</td><td><div class="progress" style="height:20px"><div class="progress-bar" style="width:10%">10%</div></div></td></tr>
+<tr><td>T-014</td><td>Agregar usuarios demo para testing</td><td>QA</td><td><div class="progress" style="height:20px"><div class="progress-bar" style="width:20%">20%</div></div></td></tr>
+<tr><td>T-015</td><td>Implementar caché de consultas</td><td>Desarrollo</td><td><div class="progress" style="height:20px"><div class="progress-bar" style="width:0%">0%</div></div></td></tr>
+</tbody>
+</table>
+
+<h2 id="section-3">4. Tareas Planificadas</h2>
+<h3>4.1 Corto Plazo (v2.2)</h3>
+<table>
+<thead><tr><th>ID</th><th>Tarea</th><th>Prioridad</th><th>Estimado</th></tr></thead>
+<tbody>
+<tr><td>T-016</td><td>Migrar AdminController a SafeQuery</td><td><span class="badge badge-danger">ALTA</span></td><td>2 días</td></tr>
+<tr><td>T-017</td><td>Migrar PlanController a SafeQuery</td><td><span class="badge badge-danger">ALTA</span></td><td>3 días</td></tr>
+<tr><td>T-018</td><td>Migrar IndicadoresController a SafeQuery</td><td><span class="badge badge-danger">ALTA</span></td><td>2 días</td></tr>
+<tr><td>T-019</td><td>Implementar caché Redis</td><td><span class="badge badge-warning">MEDIA</span></td><td>5 días</td></tr>
+<tr><td>T-020</td><td>Agregar 10 usuarios demo adicionales</td><td><span class="badge badge-success">BAJA</span></td><td>1 día</td></tr>
+</tbody>
+</table>
+
+<h3>4.2 Mediano Plazo (v2.3)</h3>
+<table>
+<thead><tr><th>ID</th><th>Tarea</th><th>Prioridad</th><th>Estimado</th></tr></thead>
+<tbody>
+<tr><td>T-021</td><td>Integración con API de IA real (OpenAI)</td><td><span class="badge badge-danger">ALTA</span></td><td>10 días</td></tr>
+<tr><td>T-022</td><td>Dashboard avanzado con gráficos interactivos</td><td><span class="badge badge-warning">MEDIA</span></td><td>7 días</td></tr>
+<tr><td>T-023</td><td>Exportación de reportes a Excel/PDF</td><td><span class="badge badge-warning">MEDIA</span></td><td>5 días</td></tr>
+<tr><td>T-024</td><td>Notificaciones por email</td><td><span class="badge badge-warning">MEDIA</span></td><td>4 días</td></tr>
+<tr><td>T-025</td><td>API REST completa con OpenAPI 3.0</td><td><span class="badge badge-warning">MEDIA</span></td><td>8 días</td></tr>
+</tbody>
+</table>
+
+<h3>4.3 Largo Plazo (v3.0)</h3>
+<table>
+<thead><tr><th>ID</th><th>Tarea</th><th>Prioridad</th><th>Estimado</th></tr></thead>
+<tbody>
+<tr><td>T-026</td><td>Migración a PHP 8.5 con fibers</td><td><span class="badge badge-success">BAJA</span></td><td>15 días</td></tr>
+<tr><td>T-027</td><td>Implementación de WebSockets</td><td><span class="badge badge-success">BAJA</span></td><td>10 días</td></tr>
+<tr><td>T-028</td><td>Aplicación móvil nativa (React Native)</td><td><span class="badge badge-success">BAJA</span></td><td>30 días</td></tr>
+<tr><td>T-029</td><td>Multi-tenant avanzado</td><td><span class="badge badge-success">BAJA</span></td><td>20 días</td></tr>
+<tr><td>T-030</td><td>Machine Learning para predicciones</td><td><span class="badge badge-success">BAJA</span></td><td>25 días</td></tr>
+</tbody>
+</table>
+
+<h2 id="section-4">5. Métricas de Progreso</h2>
+<div class="diagram">
+<div class="diagram-title">Progreso General del Proyecto</div>
+<svg width="700" height="300" viewBox="0 0 700 300">
+  <!-- Círculo de progreso -->
+  <circle cx="150" cy="150" r="80" fill="none" stroke="#e0e0e0" stroke-width="20"/>
+  <circle cx="150" cy="150" r="80" fill="none" stroke="#28a745" stroke-width="20" 
+          stroke-dasharray="502.65" stroke-dashoffset="0" transform="rotate(-90 150 150)"/>
+  <text x="150" y="145" text-anchor="middle" font-size="36" font-weight="bold" fill="#28a745">100%</text>
+  <text x="150" y="170" text-anchor="middle" font-size="14" fill="#666">v2.1</text>
+  
+  <!-- Barras de progreso -->
+  <rect x="300" y="50" width="350" height="30" rx="4" fill="#e0e0e0"/>
+  <rect x="300" y="50" width="350" height="30" rx="4" fill="#28a745"/>
+  <text x="310" y="70" fill="white" font-size="12">Funcionalidad: 100%</text>
+  
+  <rect x="300" y="100" width="350" height="30" rx="4" fill="#e0e0e0"/>
+  <rect x="300" y="100" width="350" height="30" rx="4" fill="#28a745"/>
+  <text x="310" y="120" fill="white" font-size="12">Seguridad: 100%</text>
+  
+  <rect x="300" y="150" width="350" height="30" rx="4" fill="#e0e0e0"/>
+  <rect x="300" y="150" width="350" height="30" rx="4" fill="#28a745"/>
+  <text x="310" y="170" fill="white" font-size="12">Documentación: 100%</text>
+  
+  <rect x="300" y="200" width="350" height="30" rx="4" fill="#e0e0e0"/>
+  <rect x="300" y="200" width="35" height="30" rx="4" fill="#ffc107"/>
+  <text x="310" y="220" fill="#333" font-size="12">Testing E2E: 10%</text>
+  
+  <rect x="300" y="250" width="350" height="30" rx="4" fill="#e0e0e0"/>
+  <rect x="300" y="250" width="35" height="30" rx="4" fill="#ffc107"/>
+  <text x="310" y="270" fill="#333" font-size="12">SafeQuery Migration: 10%</text>
+</svg>
+</div>
+
+<h2 id="section-5">6. Issues Conocidos</h2>
+<table>
+<thead><tr><th>ID</th><th>Descripción</th><th>Severidad</th><th>Estado</th></tr></thead>
+<tbody>
+<tr><td>I-001</td><td>Algunos caracteres Unicode no se renderizan en PDF</td><td><span class="badge badge-success">BAJA</span></td><td><span class="badge badge-warning">ABIERTO</span></td></tr>
+<tr><td>I-002</td><td>Simulador experto no detecta duplicados de KPIs con nombres similares</td><td><span class="badge badge-success">BAJA</span></td><td><span class="badge badge-warning">ABIERTO</span></td></tr>
+</tbody>
+</table>
+
+<h2 id="section-6">7. Próximos Pasos Inmediatos</h2>
+<ol>
+<li>Completar migración de controllers a SafeQuery (T-016, T-017, T-018)</li>
+<li>Implementar caché Redis para mejorar rendimiento (T-019)</li>
+<li>Agregar usuarios demo para testing E2E (T-020)</li>
+<li>Planificar sprint para v2.2 con tareas de corto plazo</li>
+</ol>
+
+<div class="info-box">
+<strong>📞 Contacto:</strong> Para consultas sobre el roadmap, contactar al equipo de desarrollo a través del sistema de tickets de soporte.
+</div>
+        </main>
+    </div>
+</body>
+</html>

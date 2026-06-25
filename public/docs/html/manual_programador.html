@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Programador — EstrateGIA v3.0</title>
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #0d47a1;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --purple: #6f42c1;
+            --gray-100: #f8f9fa;
+            --gray-200: #e9ecef;
+            --gray-600: #6c757d;
+            --gray-900: #212529;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.7;
+            color: var(--gray-900);
+            background: var(--gray-100);
+        }
+        .doc-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+        }
+        .doc-header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .doc-header p { font-size: 1.2rem; opacity: 0.9; }
+        .doc-meta {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        .doc-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            max-width: 1400px;
+            margin: 0 auto;
+            gap: 30px;
+            padding: 30px;
+        }
+        .toc {
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .toc h3 {
+            font-size: 1rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        .toc ul { list-style: none; }
+        .toc li { margin-bottom: 8px; }
+        .toc a {
+            color: var(--gray-600);
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: block;
+            padding: 4px 0;
+            transition: color 0.2s;
+        }
+        .toc a:hover { color: var(--primary); }
+        .toc-h3 { padding-left: 15px; }
+        .doc-content {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        h2 {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin: 40px 0 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--gray-200);
+        }
+        h3 {
+            font-size: 1.3rem;
+            color: var(--gray-900);
+            margin: 30px 0 15px;
+        }
+        h4 {
+            font-size: 1.1rem;
+            margin: 20px 0 10px;
+        }
+        p { margin-bottom: 15px; }
+        ul, ol { margin: 15px 0 15px 25px; }
+        li { margin-bottom: 8px; }
+        code {
+            background: var(--gray-100);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        th {
+            background: var(--gray-100);
+            font-weight: 600;
+        }
+        .diagram {
+            background: white;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        .diagram-title {
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+        .flow-box {
+            display: inline-block;
+            padding: 15px 25px;
+            border-radius: 8px;
+            margin: 10px;
+            font-weight: 500;
+            color: white;
+        }
+        .flow-arrow {
+            font-size: 1.5rem;
+            color: var(--gray-600);
+            margin: 0 10px;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid var(--primary);
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid var(--warning);
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid var(--success);
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        .screenshot {
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 20px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .screenshot img {
+            width: 100%;
+            display: block;
+        }
+        .screenshot-caption {
+            background: var(--gray-100);
+            padding: 10px 15px;
+            font-size: 0.85rem;
+            color: var(--gray-600);
+            text-align: center;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-primary { background: var(--primary); color: white; }
+        .badge-success { background: var(--success); color: white; }
+        .badge-warning { background: var(--warning); color: var(--gray-900); }
+        .badge-danger { background: var(--danger); color: white; }
+        @media print {
+            .toc { display: none; }
+            .doc-container { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .doc-container { grid-template-columns: 1fr; }
+            .toc { position: static; }
+        }
+    </style>
+</head>
+<body>
+    <div class="doc-header">
+        <h1>Manual de Programador</h1>
+        <p>Arquitectura, estándares y desarrollo</p>
+        <div class="doc-meta">
+            <span><i class="fas fa-calendar"></i> 22/06/2026</span>
+            <span><i class="fas fa-code-branch"></i> v3.0</span>
+            <span><i class="fas fa-file-lines"></i> 68 páginas</span>
+        </div>
+    </div>
+    <div class="doc-container">
+        <nav class="toc"><h3>Índice</h3><ul><li class='toc-h2'><a href='#section-0'>1. Arquitectura del Sistema</a></li><li class='toc-h2'><a href='#section-1'>2. Estándares de Código</a></li><li class='toc-h3'><a href='#section-2'>2.1 SafeQuery — Protección SQL Obligatoria</a></li><li class='toc-h3'><a href='#section-3'>2.2 Métodos Disponibles en SafeQuery</a></li><li class='toc-h2'><a href='#section-4'>3. Estructura de Directorios</a></li><li class='toc-h2'><a href='#section-5'>4. Base de Datos</a></li><li class='toc-h3'><a href='#section-6'>4.1 Estadísticas</a></li><li class='toc-h3'><a href='#section-7'>4.2 Convenciones de Nomenclatura</a></li><li class='toc-h2'><a href='#section-8'>5. API REST</a></li><li class='toc-h3'><a href='#section-9'>5.1 Endpoints Principales</a></li><li class='toc-h2'><a href='#section-10'>6. Testing</a></li><li class='toc-h3'><a href='#section-11'>6.1 Ejecutar Tests</a></li><li class='toc-h3'><a href='#section-12'>6.2 Checklist de 13 Pasos para Nuevo Módulo</a></li><li class='toc-h2'><a href='#section-13'>7. Despliegue</a></li><li class='toc-h3'><a href='#section-14'>7.1 Script de Despliegue</a></li></ul></nav>
+        <main class="doc-content">
+            <h2 id="section-0">1. Arquitectura del Sistema</h2>
+<div class="screenshot">
+    <img src="/docs/screenshots/dashboard.png" alt="Arquitectura general del sistema EstrateGIA" loading="lazy">
+    <div class="screenshot-caption">Arquitectura general del sistema EstrateGIA</div>
+</div>
+<p>EstrateGIA v2.1 sigue una arquitectura MVC (Model-View-Controller) con patrones de diseño modernos y estándares de seguridad enterprise.</p>
+
+<div class="diagram">
+<div class="diagram-title">Arquitectura General del Sistema</div>
+<svg width="700" height="400" viewBox="0 0 700 400">
+  <!-- Capas -->
+  <rect x="50" y="20" width="600" height="60" rx="8" fill="#1a73e8" opacity="0.1" stroke="#1a73e8" stroke-width="2"/>
+  <text x="350" y="55" text-anchor="middle" font-weight="bold" fill="#1a73e8">PRESENTACIÓN (Templates + Bootstrap 5 + Chart.js)</text>
+  
+  <rect x="50" y="100" width="600" height="60" rx="8" fill="#28a745" opacity="0.1" stroke="#28a745" stroke-width="2"/>
+  <text x="350" y="135" text-anchor="middle" font-weight="bold" fill="#28a745">CONTROLADORES (25 Controllers + Router)</text>
+  
+  <rect x="50" y="180" width="600" height="60" rx="8" fill="#ffc107" opacity="0.1" stroke="#ffc107" stroke-width="2"/>
+  <text x="350" y="215" text-anchor="middle" font-weight="bold" fill="#333">LÓGICA DE NEGOCIO (Lib: PlanManager, FinancialManager, HSE)</text>
+  
+  <rect x="50" y="260" width="600" height="60" rx="8" fill="#dc3545" opacity="0.1" stroke="#dc3545" stroke-width="2"/>
+  <text x="350" y="295" text-anchor="middle" font-weight="bold" fill="#dc3545">PERSISTENCIA (EstrateGiaCore + PDO + SafeQuery)</text>
+  
+  <rect x="50" y="340" width="600" height="50" rx="8" fill="#6f42c1" opacity="0.1" stroke="#6f42c1" stroke-width="2"/>
+  <text x="350" y="370" text-anchor="middle" font-weight="bold" fill="#6f42c1">BASE DE DATOS (MySQL/MariaDB — 94 Tablas)</text>
+  
+  <!-- Flechas -->
+  <line x1="350" y1="80" x2="350" y2="100" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="350" y1="160" x2="350" y2="180" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="350" y1="240" x2="350" y2="260" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="350" y1="320" x2="350" y2="340" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+  
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="5" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#666"/>
+    </marker>
+  </defs>
+</svg>
+</div>
+
+<h2 id="section-1">2. Estándares de Código</h2>
+<div class="screenshot">
+    <img src="/docs/screenshots/indicadores.png" alt="Ejemplo de dashboard de indicadores" loading="lazy">
+    <div class="screenshot-caption">Ejemplo de dashboard de indicadores</div>
+</div>
+<h3>2.1 SafeQuery — Protección SQL Obligatoria</h3>
+<p>Todo controlador que use consultas SQL debe incluir el trait SafeQuery:</p>
+<pre><code>&lt;?php
+declare(strict_types=1);
+
+require_once BASE_PATH . '/lib/SafeQuery.php';
+
+class MiController {
+    use \SafeQuery;
+    private $core;
+    
+    public function __construct() {
+        Auth::guard();
+        $this->core = EstrateGiaCore::getInstance();
+    }
+    
+    public function index(): void {
+        $eid = (int)($_COOKIE['empresa_activa'] ?? 1);
+        
+        // ✅ CORRECTO: Usar SafeQuery
+        $total = (int)$this->safe("SELECT COUNT(*) FROM tabla WHERE id_empresa=?", [$eid]);
+        $rows = $this->safeAll("SELECT * FROM tabla WHERE id_empresa=?", [$eid]);
+        
+        // ❌ INCORRECTO: Query directa
+        // $rows = $this->db->query("SELECT * FROM tabla")->fetchAll();
+    }
+}</code></pre>
+
+<h3>2.2 Métodos Disponibles en SafeQuery</h3>
+<table>
+<thead><tr><th>Método</th><th>Retorna</th><th>Uso</th></tr></thead>
+<tbody>
+<tr><td><code>safe($sql, $params)</code></td><td>Valor escalar</td><td>SELECT COUNT, MAX, etc.</td></tr>
+<tr><td><code>safeAll($sql, $params)</code></td><td>Array de filas</td><td>SELECT múltiples registros</td></tr>
+<tr><td><code>safeOne($sql, $params)</code></td><td>Una fila o null</td><td>SELECT único registro</td></tr>
+<tr><td><code>safeExec($sql, $params)</code></td><td>Filas afectadas</td><td>INSERT, UPDATE, DELETE</td></tr>
+<tr><td><code>safeInsert($table, $data)</code></td><td>ID generado</td><td>INSERT con array asociativo</td></tr>
+<tr><td><code>safeUpdate($table, $data, $where)</code></td><td>Filas afectadas</td><td>UPDATE con array asociativo</td></tr>
+<tr><td><code>safeDelete($table, $where)</code></td><td>Filas afectadas</td><td>DELETE con condición</td></tr>
+<tr><td><code>safeCount($table, $where)</code></td><td>Conteo</td><td>COUNT con condición</td></tr>
+<tr><td><code>safeExists($table, $where)</code></td><td>Boolean</td><td>Verificar existencia</td></tr>
+</tbody>
+</table>
+
+<h2 id="section-2">3. Estructura de Directorios</h2>
+<div class="screenshot">
+    <img src="/docs/screenshots/phva.png" alt="Módulo PHVA implementado" loading="lazy">
+    <div class="screenshot-caption">Módulo PHVA implementado</div>
+</div>
+<pre><code>workspace/
+├── public/                 # Document root
+│   ├── index.php          # Front controller
+│   ├── api.php            # API REST
+│   ├── assets/            # CSS, JS, imágenes
+│   └── docs/              # Documentación
+├── src/
+│   ├── Controllers/       # 25 controladores
+│   ├── Auth.php           # Autenticación
+│   └── Router.php         # Enrutamiento
+├── lib/
+│   ├── EstrateGiaCore.php # Singleton DB
+│   ├── SafeQuery.php      # Trait protección SQL
+│   ├── PlanManager.php    # Lógica de planes
+│   ├── FinancialManager.php # Presupuesto
+│   └── ...                # Otras librerías
+├── templates/             # 83+ templates
+├── tests/
+│   ├── unit_test.php      # 70 tests unitarios
+│   ├── smoke_test.php     # 66 tests de humo
+│   ├── simulador_experto.php # 37 checks
+│   └── e2e/               # Tests Playwright
+└── scripts/
+    ├── backup.sh          # Backup diario
+    └── generar_kpis.php   # Generador automático</code></pre>
+
+<h2 id="section-3">4. Base de Datos</h2>
+<div class="screenshot">
+    <img src="/docs/screenshots/admin_usuarios.png" alt="Gestión de usuarios - ejemplo de CRUD" loading="lazy">
+    <div class="screenshot-caption">Gestión de usuarios - ejemplo de CRUD</div>
+</div>
+<h3>4.1 Estadísticas</h3>
+<table>
+<thead><tr><th>Métrica</th><th>Valor</th></tr></thead>
+<tbody>
+<tr><td>Tablas</td><td>94</td></tr>
+<tr><td>Foreign Keys</td><td>124</td></tr>
+<tr><td>Índices</td><td>8</td></tr>
+<tr><td>Triggers</td><td>12</td></tr>
+<tr><td>Procedimientos</td><td>5</td></tr>
+</tbody>
+</table>
+
+<h3>4.2 Convenciones de Nomenclatura</h3>
+<ul>
+<li><strong>Tablas:</strong> Prefijo de módulo + nombre (ej: <code>plan_objetivos</code>, <code>ind_indicadores</code>)</li>
+<li><strong>Columnas PK:</strong> <code>{tabla_singular}_id</code> (ej: <code>objetivo_id</code>)</li>
+<li><strong>Columnas FK:</strong> Mismo nombre que PK referenciada</li>
+<li><strong>Timestamps:</strong> <code>created_at</code>, <code>updated_at</code></li>
+</ul>
+
+<h2 id="section-4">5. API REST</h2>
+<h3>5.1 Endpoints Principales</h3>
+<table>
+<thead><tr><th>Método</th><th>Ruta</th><th>Descripción</th></tr></thead>
+<tbody>
+<tr><td><span class="badge badge-success">GET</span></td><td><code>/api/health</code></td><td>Estado del sistema (público)</td></tr>
+<tr><td><span class="badge badge-success">GET</span></td><td><code>/api/powerbi</code></td><td>Datos para PowerBI</td></tr>
+<tr><td><span class="badge badge-primary">POST</span></td><td><code>/generar</code></td><td>Generación con IA</td></tr>
+<tr><td><span class="badge badge-primary">POST</span></td><td><code>/tools/save-*</code></td><td>Operaciones de workbench</td></tr>
+</tbody>
+</table>
+
+<h2 id="section-5">6. Testing</h2>
+<h3>6.1 Ejecutar Tests</h3>
+<pre><code># Tests unitarios (70 tests)
+php tests/unit_test.php
+
+# Tests de humo (66 tests)
+php tests/smoke_test.php
+
+# Simulador experto (37 checks)
+php tests/simulador_experto.php
+
+# Tests E2E con Playwright
+node tests/e2e/run_audit.js
+node tests/e2e/run_audit.js --fast    # Rápido (10 módulos)
+node tests/e2e/run_audit.js --screens # Con capturas</code></pre>
+
+<h3>6.2 Checklist de 13 Pasos para Nuevo Módulo</h3>
+<ol>
+<li>Crear controlador con <code>use \SafeQuery;</code></li>
+<li>Métodos: <code>index()</code> + CRUD</li>
+<li>Ruta en <code>public/index.php</code></li>
+<li>Template en <code>templates/xxx/index.php</code></li>
+<li>Agregar al menú sidebar</li>
+<li>Usar <code>htmlspecialchars()</code> en outputs</li>
+<li>Usar <code>declare(strict_types=1);</code></li>
+<li>No usar <code>$this->db->query()</code> sin prepared statements</li>
+<li>No pasar null a funciones PHP</li>
+<li>Ejecutar <code>php -l</code> para verificar sintaxis</li>
+<li>Ejecutar auditoría E2E</li>
+<li>Verificar 0 FATAL, 0 SIN_LAYOUT</li>
+<li>Documentar cambios</li>
+</ol>
+
+<h2 id="section-6">7. Despliegue</h2>
+<h3>7.1 Script de Despliegue</h3>
+<pre><code>#!/bin/bash
+# deploy-staging.sh
+
+# 1. Backup de BD
+mysqldump -u $DB_USER -p$DB_PASS $DB_NAME > backup_$(date +%Y%m%d).sql
+
+# 2. Sincronizar archivos
+rsync -avz --delete public/ user@server:/var/www/estrategia/public/
+rsync -avz --delete lib/ user@server:/var/www/estrategia/lib/
+rsync -avz --delete src/ user@server:/var/www/estrategia/src/
+rsync -avz --delete templates/ user@server:/var/www/estrategia/templates/
+
+# 3. Reiniciar PHP-FPM
+systemctl restart php8.5-fpm
+
+# 4. Verificar
+curl -s http://server:6611/api/health</code></pre>
+        </main>
+    </div>
+</body>
+</html>

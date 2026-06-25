@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Casos de Uso — EstrateGIA v3.0</title>
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #0d47a1;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --purple: #6f42c1;
+            --gray-100: #f8f9fa;
+            --gray-200: #e9ecef;
+            --gray-600: #6c757d;
+            --gray-900: #212529;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.7;
+            color: var(--gray-900);
+            background: var(--gray-100);
+        }
+        .doc-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+        }
+        .doc-header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .doc-header p { font-size: 1.2rem; opacity: 0.9; }
+        .doc-meta {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        .doc-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            max-width: 1400px;
+            margin: 0 auto;
+            gap: 30px;
+            padding: 30px;
+        }
+        .toc {
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .toc h3 {
+            font-size: 1rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        .toc ul { list-style: none; }
+        .toc li { margin-bottom: 8px; }
+        .toc a {
+            color: var(--gray-600);
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: block;
+            padding: 4px 0;
+            transition: color 0.2s;
+        }
+        .toc a:hover { color: var(--primary); }
+        .toc-h3 { padding-left: 15px; }
+        .doc-content {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        h2 {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin: 40px 0 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--gray-200);
+        }
+        h3 {
+            font-size: 1.3rem;
+            color: var(--gray-900);
+            margin: 30px 0 15px;
+        }
+        h4 {
+            font-size: 1.1rem;
+            margin: 20px 0 10px;
+        }
+        p { margin-bottom: 15px; }
+        ul, ol { margin: 15px 0 15px 25px; }
+        li { margin-bottom: 8px; }
+        code {
+            background: var(--gray-100);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        th {
+            background: var(--gray-100);
+            font-weight: 600;
+        }
+        .diagram {
+            background: white;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        .diagram-title {
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+        .flow-box {
+            display: inline-block;
+            padding: 15px 25px;
+            border-radius: 8px;
+            margin: 10px;
+            font-weight: 500;
+            color: white;
+        }
+        .flow-arrow {
+            font-size: 1.5rem;
+            color: var(--gray-600);
+            margin: 0 10px;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid var(--primary);
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid var(--warning);
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid var(--success);
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        .screenshot {
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 20px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .screenshot img {
+            width: 100%;
+            display: block;
+        }
+        .screenshot-caption {
+            background: var(--gray-100);
+            padding: 10px 15px;
+            font-size: 0.85rem;
+            color: var(--gray-600);
+            text-align: center;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-primary { background: var(--primary); color: white; }
+        .badge-success { background: var(--success); color: white; }
+        .badge-warning { background: var(--warning); color: var(--gray-900); }
+        .badge-danger { background: var(--danger); color: white; }
+        @media print {
+            .toc { display: none; }
+            .doc-container { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .doc-container { grid-template-columns: 1fr; }
+            .toc { position: static; }
+        }
+    </style>
+</head>
+<body>
+    <div class="doc-header">
+        <h1>Casos de Uso</h1>
+        <p>Diagramas UML, actores y flujos de trabajo</p>
+        <div class="doc-meta">
+            <span><i class="fas fa-calendar"></i> 22/06/2026</span>
+            <span><i class="fas fa-code-branch"></i> v3.0</span>
+            <span><i class="fas fa-file-lines"></i> 41 páginas</span>
+        </div>
+    </div>
+    <div class="doc-container">
+        <nav class="toc"><h3>Índice</h3><ul><li class='toc-h2'><a href='#section-0'>1. Introducción a Casos de Uso</a></li><li class='toc-h2'><a href='#section-1'>2. Actores del Sistema</a></li><li class='toc-h2'><a href='#section-2'>3. Caso de Uso: Crear Plan Estratégico</a></li><li class='toc-h3'><a href='#section-3'>3.1 Flujo Principal</a></li><li class='toc-h3'><a href='#section-4'>3.2 Flujo Alternativo: Usar IA</a></li><li class='toc-h2'><a href='#section-5'>4. Caso de Uso: Gestionar Indicadores</a></li><li class='toc-h3'><a href='#section-6'>4.1 Flujo Principal</a></li><li class='toc-h2'><a href='#section-7'>5. Caso de Uso: Reportar No Conformidad</a></li><li class='toc-h3'><a href='#section-8'>5.1 Flujo Principal</a></li><li class='toc-h2'><a href='#section-9'>6. Caso de Uso: Administrar Usuarios</a></li><li class='toc-h3'><a href='#section-10'>6.1 Flujo Principal</a></li><li class='toc-h2'><a href='#section-11'>7. Resumen de Casos de Uso</a></li></ul></nav>
+        <main class="doc-content">
+            <h2 id="section-0">1. Introducción a Casos de Uso</h2>
+<p>Este documento describe los casos de uso del sistema EstrateGIA, organizados por actor y módulo funcional. Cada caso de uso incluye diagramas de secuencia, actores involucrados y flujos alternativos.</p>
+
+<div class="info-box">
+<strong>📋 Convención:</strong> Los casos de uso siguen el formato estándar UML 2.5 con actores primarios y secundarios.
+</div>
+
+<h2 id="section-1">2. Actores del Sistema</h2>
+<div class="diagram">
+<div class="diagram-title">Diagrama de Actores</div>
+<svg width="700" height="300" viewBox="0 0 700 300">
+  <circle cx="100" cy="80" r="20" fill="#1a73e8"/>
+  <line x1="100" y1="100" x2="100" y2="140" stroke="#1a73e8" stroke-width="2"/>
+  <line x1="80" y1="115" x2="120" y2="115" stroke="#1a73e8" stroke-width="2"/>
+  <line x1="100" y1="140" x2="80" y2="170" stroke="#1a73e8" stroke-width="2"/>
+  <line x1="100" y1="140" x2="120" y2="170" stroke="#1a73e8" stroke-width="2"/>
+  <text x="100" y="195" text-anchor="middle" font-weight="bold" fill="#1a73e8">Director</text>
+  
+  <circle cx="250" cy="80" r="20" fill="#28a745"/>
+  <line x1="250" y1="100" x2="250" y2="140" stroke="#28a745" stroke-width="2"/>
+  <line x1="230" y1="115" x2="270" y2="115" stroke="#28a745" stroke-width="2"/>
+  <line x1="250" y1="140" x2="230" y2="170" stroke="#28a745" stroke-width="2"/>
+  <line x1="250" y1="140" x2="270" y2="170" stroke="#28a745" stroke-width="2"/>
+  <text x="250" y="195" text-anchor="middle" font-weight="bold" fill="#28a745">Gerente</text>
+  
+  <circle cx="400" cy="80" r="20" fill="#ffc107"/>
+  <line x1="400" y1="100" x2="400" y2="140" stroke="#ffc107" stroke-width="2"/>
+  <line x1="380" y1="115" x2="420" y2="115" stroke="#ffc107" stroke-width="2"/>
+  <line x1="400" y1="140" x2="380" y2="170" stroke="#ffc107" stroke-width="2"/>
+  <line x1="400" y1="140" x2="420" y2="170" stroke="#ffc107" stroke-width="2"/>
+  <text x="400" y="195" text-anchor="middle" font-weight="bold" fill="#333">Coordinador</text>
+  
+  <circle cx="550" cy="80" r="20" fill="#6f42c1"/>
+  <line x1="550" y1="100" x2="550" y2="140" stroke="#6f42c1" stroke-width="2"/>
+  <line x1="530" y1="115" x2="570" y2="115" stroke="#6f42c1" stroke-width="2"/>
+  <line x1="550" y1="140" x2="530" y2="170" stroke="#6f42c1" stroke-width="2"/>
+  <line x1="550" y1="140" x2="570" y2="170" stroke="#6f42c1" stroke-width="2"/>
+  <text x="550" y="195" text-anchor="middle" font-weight="bold" fill="#6f42c1">Admin</text>
+  
+  <rect x="50" y="230" width="600" height="50" rx="8" fill="#f8f9fa" stroke="#e0e0e0"/>
+  <text x="350" y="260" text-anchor="middle" font-size="12" fill="#666">Sistema EstrateGIA v2.1</text>
+</svg>
+</div>
+
+<h2 id="section-2">3. Caso de Uso: Crear Plan Estratégico</h2>
+<table>
+<thead><tr><th>Atributo</th><th>Valor</th></tr></thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CU-001</td></tr>
+<tr><td><strong>Nombre</strong></td><td>Crear Plan Estratégico</td></tr>
+<tr><td><strong>Actor Primario</strong></td><td>Director General</td></tr>
+<tr><td><strong>Actor Secundario</strong></td><td>Sistema de IA</td></tr>
+<tr><td><strong>Precondición</strong></td><td>Usuario autenticado con rol Director</td></tr>
+<tr><td><strong>Postcondición</strong></td><td>Plan creado con metodología seleccionada</td></tr>
+</tbody>
+</table>
+
+<h3>3.1 Flujo Principal</h3>
+<ol>
+<li>Actor navega a Planeación</li>
+<li>Actor hace clic en "Nuevo Plan"</li>
+<li>Sistema muestra formulario de creación</li>
+<li>Actor completa: nombre, periodo, metodología</li>
+<li>Actor hace clic en "Crear"</li>
+<li>Sistema valida datos</li>
+<li>Sistema crea plan en BD</li>
+<li>Sistema muestra confirmación</li>
+</ol>
+
+<h3>3.2 Flujo Alternativo: Usar IA</h3>
+<ol>
+<li>En paso 4, actor hace clic en "Generar con IA"</li>
+<li>Sistema solicita contexto empresarial</li>
+<li>Actor ingresa sector, tamaño, objetivos</li>
+<li>Sistema envía a IA simulada</li>
+<li>IA genera sugerencias de objetivos</li>
+<li>Actor revisa y acepta sugerencias</li>
+<li>Continúa en paso 5 del flujo principal</li>
+</ol>
+
+<div class="diagram">
+<div class="diagram-title">Diagrama de Secuencia — Crear Plan</div>
+<svg width="700" height="250" viewBox="0 0 700 250">
+  <rect x="50" y="20" width="80" height="30" fill="#1a73e8" rx="4"/>
+  <text x="90" y="40" text-anchor="middle" fill="white" font-size="11">Director</text>
+  
+  <rect x="200" y="20" width="80" height="30" fill="#28a745" rx="4"/>
+  <text x="240" y="40" text-anchor="middle" fill="white" font-size="11">Sistema</text>
+  
+  <rect x="350" y="20" width="80" height="30" fill="#6f42c1" rx="4"/>
+  <text x="390" y="40" text-anchor="middle" fill="white" font-size="11">BD</text>
+  
+  <rect x="500" y="20" width="80" height="30" fill="#dc3545" rx="4"/>
+  <text x="540" y="40" text-anchor="middle" fill="white" font-size="11">IA</text>
+  
+  <line x1="90" y1="50" x2="90" y2="230" stroke="#1a73e8" stroke-width="2" stroke-dasharray="5,5"/>
+  <line x1="240" y1="50" x2="240" y2="230" stroke="#28a745" stroke-width="2" stroke-dasharray="5,5"/>
+  <line x1="390" y1="50" x2="390" y2="230" stroke="#6f42c1" stroke-width="2" stroke-dasharray="5,5"/>
+  <line x1="540" y1="50" x2="540" y2="230" stroke="#dc3545" stroke-width="2" stroke-dasharray="5,5"/>
+  
+  <line x1="90" y1="70" x2="240" y2="70" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="165" y="65" text-anchor="middle" font-size="10">1: Crear Plan</text>
+  
+  <line x1="240" y1="90" x2="390" y2="90" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="315" y="85" text-anchor="middle" font-size="10">2: INSERT</text>
+  
+  <line x1="390" y1="110" x2="240" y2="110" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="315" y="105" text-anchor="middle" font-size="10">3: OK</text>
+  
+  <line x1="240" y1="130" x2="90" y2="130" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="165" y="125" text-anchor="middle" font-size="10">4: Confirmación</text>
+  
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#333"/>
+    </marker>
+  </defs>
+</svg>
+</div>
+
+<h2 id="section-3">4. Caso de Uso: Gestionar Indicadores</h2>
+<table>
+<thead><tr><th>Atributo</th><th>Valor</th></tr></thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CU-002</td></tr>
+<tr><td><strong>Nombre</strong></td><td>Gestionar Indicadores KPI</td></tr>
+<tr><td><strong>Actor Primario</strong></td><td>Gerente de Área</td></tr>
+<tr><td><strong>Precondición</strong></td><td>Plan activo con objetivos definidos</td></tr>
+<tr><td><strong>Postcondición</strong></td><td>Indicadores creados y vinculados</td></tr>
+</tbody>
+</table>
+
+<h3>4.1 Flujo Principal</h3>
+<ol>
+<li>Actor navega a Indicadores</li>
+<li>Actor hace clic en "Nuevo Indicador"</li>
+<li>Sistema muestra formulario</li>
+<li>Actor completa: nombre, fórmula, meta, frecuencia</li>
+<li>Actor selecciona objetivo vinculado</li>
+<li>Actor hace clic en "Guardar"</li>
+<li>Sistema valida fórmula</li>
+<li>Sistema crea indicador</li>
+<li>Sistema actualiza progreso del objetivo</li>
+</ol>
+
+<h2 id="section-4">5. Caso de Uso: Reportar No Conformidad</h2>
+<table>
+<thead><tr><th>Atributo</th><th>Valor</th></tr></thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CU-003</td></tr>
+<tr><td><strong>Nombre</strong></td><td>Reportar No Conformidad</td></tr>
+<tr><td><strong>Actor Primario</strong></td><td>Coordinador de Calidad</td></tr>
+<tr><td><strong>Precondición</strong></td><td>Usuario con rol Coordinador o superior</td></tr>
+<tr><td><strong>Postcondición</strong></td><td>NC registrada con estado "Abierta"</td></tr>
+</tbody>
+</table>
+
+<h3>5.1 Flujo Principal</h3>
+<ol>
+<li>Actor navega a No Conformidades</li>
+<li>Actor hace clic en "Nueva NC"</li>
+<li>Sistema muestra formulario</li>
+<li>Actor completa: tipo, descripción, gravedad</li>
+<li>Actor asigna responsable</li>
+<li>Actor establece fecha límite</li>
+<li>Actor hace clic en "Crear"</li>
+<li>Sistema notifica al responsable</li>
+<li>Sistema actualiza dashboard de calidad</li>
+</ol>
+
+<h2 id="section-5">6. Caso de Uso: Administrar Usuarios</h2>
+<table>
+<thead><tr><th>Atributo</th><th>Valor</th></tr></thead>
+<tbody>
+<tr><td><strong>ID</strong></td><td>CU-004</td></tr>
+<tr><td><strong>Nombre</strong></td><td>Administrar Usuarios</td></tr>
+<tr><td><strong>Actor Primario</strong></td><td>Administrador del Sistema</td></tr>
+<tr><td><strong>Precondición</strong></td><td>Usuario con rol SUPER_ADMIN</td></tr>
+<tr><td><strong>Postcondición</strong></td><td>Usuario creado/actualizado/eliminado</td></tr>
+</tbody>
+</table>
+
+<h3>6.1 Flujo Principal</h3>
+<ol>
+<li>Actor navega a Sistema > Usuarios</li>
+<li>Actor hace clic en "Nuevo Usuario"</li>
+<li>Sistema muestra formulario</li>
+<li>Actor completa: nombre, email, rol, empresa</li>
+<li>Actor establece contraseña temporal</li>
+<li>Actor hace clic en "Crear"</li>
+<li>Sistema valida email único</li>
+<li>Sistema crea usuario con hash de contraseña</li>
+<li>Sistema envía email de bienvenida</li>
+</ol>
+
+<h2 id="section-6">7. Resumen de Casos de Uso</h2>
+<table>
+<thead><tr><th>ID</th><th>Nombre</th><th>Actor</th><th>Prioridad</th></tr></thead>
+<tbody>
+<tr><td>CU-001</td><td>Crear Plan Estratégico</td><td>Director</td><td><span class="badge badge-danger">ALTA</span></td></tr>
+<tr><td>CU-002</td><td>Gestionar Indicadores</td><td>Gerente</td><td><span class="badge badge-danger">ALTA</span></td></tr>
+<tr><td>CU-003</td><td>Reportar No Conformidad</td><td>Coordinador</td><td><span class="badge badge-warning">MEDIA</span></td></tr>
+<tr><td>CU-004</td><td>Administrar Usuarios</td><td>Admin</td><td><span class="badge badge-danger">ALTA</span></td></tr>
+<tr><td>CU-005</td><td>Generar Reporte PHVA</td><td>Director</td><td><span class="badge badge-warning">MEDIA</span></td></tr>
+<tr><td>CU-006</td><td>Autoevaluación SST</td><td>Coordinador</td><td><span class="badge badge-warning">MEDIA</span></td></tr>
+<tr><td>CU-007</td><td>Autoevaluación Ambiental</td><td>Coordinador</td><td><span class="badge badge-warning">MEDIA</span></td></tr>
+<tr><td>CU-008</td><td>Gestionar Tickets Soporte</td><td>Admin</td><td><span class="badge badge-success">BAJA</span></td></tr>
+</tbody>
+</table>
+        </main>
+    </div>
+</body>
+</html>

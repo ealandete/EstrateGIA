@@ -1,0 +1,138 @@
+<?php $ok = $_GET['ok'] ?? null; $seccion = $_GET['seccion'] ?? 'dashboard'; $anio = $_GET['anio'] ?? date('Y'); ?>
+<?php if ($ok): ?><div class="alert alert-success">Registro guardado</div><?php endif; ?>
+
+<div class="d-flex justify-content-between mb-2">
+    <div>
+        <h5 class="mb-0"><i class="fas fa-hard-hat me-2" style="color:#ffc107"></i>Seguridad y Salud en el Trabajo</h5>
+        <small class="text-muted">ISO 45001:2018 · Decreto 1072/2015 · Res. 0312/2019 · <?= htmlspecialchars($empresa['empresa_nombre']) ?></small>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <select class="form-select form-select-sm" style="width:100px" onchange="location.href='?seccion=<?= $seccion ?>&anio='+this.value">
+            <?php for ($y = date('Y'); $y >= 2023; $y--): ?>
+            <option value="<?= $y ?>" <?= $y == $anio ? 'selected' : '' ?>><?= $y ?></option>
+            <?php endfor; ?>
+        </select>
+    </div>
+</div>
+
+<!-- Nav tabs -->
+<ul class="nav nav-tabs nav-tabs-scroll small mb-3">
+    <?php
+    $tabs = [
+        'dashboard' => ['gauge-high', 'Dashboard'],
+        'peligros' => ['triangle-exclamation', 'Peligros'],
+        'incidentes' => ['clipboard-list', 'Incidentes'],
+        'plan' => ['calendar-alt', 'Plan Anual'],
+        'normatividad' => ['scale-balanced', 'Normatividad'],
+        'ausentismo' => ['calendar-xmark', 'Ausentismo'],
+        'capacitaciones' => ['graduation-cap', 'Capacitación'],
+        'examenes' => ['stethoscope', 'Exámenes'],
+        'inspecciones' => ['magnifying-glass', 'Inspecciones'],
+        'emergencias' => ['tower-broadcast', 'Emergencias'],
+        'reportes' => ['file-pdf', 'Reportes'],
+    ];
+    foreach ($tabs as $key => $tab):
+    ?>
+    <li class="nav-item">
+        <a class="nav-link <?= $seccion == $key ? 'active' : '' ?>" href="?seccion=<?= $key ?>&anio=<?= $anio ?>">
+            <i class="fas fa-<?= $tab[0] ?> me-1" style="font-size:0.65rem"></i><?= $tab[1] ?>
+        </a>
+    </li>
+    <?php endforeach; ?>
+</ul>
+
+<?php if ($seccion == 'dashboard'): ?>
+<!-- KPI Stat Cards -->
+<div class="row g-3 mb-3">
+    <div class="col-md-3"><div class="stat-card"><div class="stat-label">Incidentes <?= $anio ?></div><div class="stat-value"><?= count($incidentes) ?></div><small>Accidentes: <?= count(array_filter($incidentes, fn($i) => $i['inc_tipo'] == 'accidente')) ?></small></div></div>
+    <div class="col-md-3"><div class="stat-card"><div class="stat-label">Días Perdidos</div><div class="stat-value">4</div><small>Costo: $0</small></div></div>
+    <div class="col-md-3"><div class="stat-card"><div class="stat-label">Avance Plan</div><div class="stat-value">0%</div><small>0/1 act.</small></div></div>
+    <div class="col-md-3"><div class="stat-card"><div class="stat-label">Capacitaciones</div><div class="stat-value">0</div><small>Exámenes: 0</small></div></div>
+</div>
+<?php endif; ?>
+
+<!-- KPIs from DB -->
+<div class="row g-3 mb-4">
+    <?php foreach ($indicadores as $ind): ?>
+    <div class="col-md-3"><div class="stat-card"><div class="stat-label"><?= htmlspecialchars($ind['sind_nombre']) ?></div><div class="stat-value"><?= $ind['sind_valor'] ?><?= $ind['sind_unidad'] ?></div>
+        <div class="progress mt-1" style="height:5px"><div class="progress-bar bg-warning" style="width:<?= min(100, ($ind['sind_valor'] / max(1, $ind['sind_meta'])) * 100) ?>%"></div></div>
+        <small>Meta: <?= $ind['sind_meta'] ?><?= $ind['sind_unidad'] ?></small>
+    </div></div>
+    <?php endforeach; ?>
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <button class="btn btn-sm btn-outline-warning mb-2" data-bs-toggle="modal" data-bs-target="#modalIndicador"><i class="fas fa-plus me-1"></i>Añadir KPI</button>
+            <small class="d-block text-muted">Agregar indicador de gestión</small>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card-box"><div class="card-box-header"><i class="fas fa-triangle-exclamation me-2"></i>Matriz de Peligros (<?= count($peligros) ?>)</div>
+        <div class="card-box-body p-0"><table class="table-box small">
+            <thead><tr><th>Código</th><th>Peligro</th><th>Tipo</th><th>Nivel</th><th>Estado</th></tr></thead>
+            <tbody><?php foreach ($peligros as $p): ?>
+            <tr><td><strong><?= $p['peligro_codigo'] ?></strong></td><td><?= htmlspecialchars(substr($p['peligro_descripcion'],0,50)) ?></td><td><?= $p['peligro_tipo'] ?></td><td><span class="badge bg-<?= $p['peligro_nivel']==='inaceptable'?'danger':'warning' ?>"><?= $p['peligro_nivel'] ?></span></td><td><?= $p['peligro_estado'] ?></td></tr>
+            <?php endforeach; ?></tbody>
+        </table></div></div>
+    </div>
+    <div class="col-md-6">
+        <div class="card-box"><div class="card-box-header"><i class="fas fa-clipboard-list me-2"></i>Últimos Incidentes (<?= count($incidentes) ?>)</div>
+        <div class="card-box-body p-0"><table class="table-box small">
+            <thead><tr><th>Código</th><th>Fecha</th><th>Tipo</th><th>Gravedad</th><th>Estado</th></tr></thead>
+            <tbody><?php foreach ($incidentes as $inc): ?>
+            <tr><td><?= $inc['inc_codigo'] ?></td><td><?= date('d/m',strtotime($inc['inc_fecha'])) ?></td><td><?= $inc['inc_tipo'] ?></td><td><span class="badge bg-<?= $inc['inc_gravedad']==='grave'?'danger':'warning' ?>"><?= $inc['inc_gravedad'] ?></span></td><td></td></tr>
+            <?php endforeach; ?></tbody>
+        </table></div></div>
+    </div>
+</div>
+
+<!-- Informes normativos SST -->
+<div class="card-box mt-4"><div class="card-box-header"><i class="fas fa-file-pdf me-2"></i>Informes Normativos SST</div>
+<div class="card-box-body">
+    <div class="row g-2">
+        <?php 
+        $informes = [
+            ['Res. 0312/2019','Informe de Condiciones de Salud','Anual'],
+            ['Res. 0312/2019','Matriz de Peligros y Valoración de Riesgos','Anual'],
+            ['Res. 1401/2007','Investigación de Accidentes Graves','Evento'],
+            ['Decreto 1072/2015','Autoevaluación SG-SST','Anual'],
+        ];
+        foreach ($informes as $inf): ?>
+        <div class="col-md-3">
+            <div class="p-2 border rounded text-center small">
+                <strong><?= $inf[1] ?></strong>
+                <div class="text-muted"><?= $inf[0] ?> · <?= $inf[2] ?></div>
+                <button class="btn btn-sm btn-outline-primary mt-1" onclick="alert('Descargar informe <?= $inf[1] ?>')"><i class="fas fa-download me-1"></i>Descargar</button>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</div></div>
+
+<!-- Modal Añadir KPI -->
+<div class="modal fade" id="modalIndicador"><div class="modal-dialog"><form method="POST" action="/sst/indicador/crear" class="modal-content">
+    <input type="hidden" name="empresa_id" value="<?= $empresaId ?>">
+    <div class="modal-header"><h5>Añadir Indicador SST</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+        <input type="text" name="nombre" class="form-control form-control-sm mb-2" placeholder="Nombre del indicador *" required>
+        <div class="row g-2 mb-2"><div class="col-6"><input type="text" name="formula" class="form-control form-control-sm" placeholder="Fórmula"></div><div class="col-6"><input type="text" name="unidad" class="form-control form-control-sm" placeholder="Unidad (%)"></div></div>
+        <div class="row g-2"><div class="col-6"><input type="number" name="meta" class="form-control form-control-sm" placeholder="Meta" step="0.01"></div><div class="col-6"><input type="number" name="valor" class="form-control form-control-sm" placeholder="Valor actual" step="0.01"></div></div>
+    </div>
+    <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-warning">Guardar</button></div>
+</form></div></div>
+
+<!-- Modal Reportar Incidente -->
+<div class="modal fade" id="modalIncidente"><div class="modal-dialog"><form method="POST" action="/sst/incidente" class="modal-content">
+    <input type="hidden" name="empresa_id" value="<?= $empresaId ?>">
+    <div class="modal-header"><h5>Reportar Incidente SST</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+        <div class="row g-2 mb-2"><div class="col-6"><select name="tipo" class="form-select form-select-sm"><option value="accidente">Accidente</option><option value="incidente">Incidente</option><option value="casi_accidente">Casi Accidente</option><option value="enfermedad_laboral">Enfermedad Laboral</option></select></div><div class="col-6"><select name="gravedad" class="form-select form-select-sm"><option value="leve">Leve</option><option value="moderado">Moderado</option><option value="grave">Grave</option></select></div></div>
+        <textarea name="descripcion" class="form-control form-control-sm mb-2" rows="3" placeholder="Descripción del incidente *" required></textarea>
+        <input type="date" name="fecha" class="form-control form-control-sm" value="<?= date('Y-m-d') ?>">
+    </div>
+    <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-danger">Reportar</button></div>
+</form></div></div>
+
+<?php $moduloContexto = 'seguridad y salud en el trabajo (ISO 45001)'; require BASE_PATH . '/templates/hse/ia_panel.php'; ?>
