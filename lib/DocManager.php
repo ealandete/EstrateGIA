@@ -300,23 +300,38 @@ class DocManager {
     public function generarCodigoDocumento(int $empresaId, string $tipo): string {
         $cfg = $this->getCodificacion($empresaId, 'documentos');
 
+        // Si no hay codificación activa, usar configuración de empresa como fallback
+        $formatoDefault = $this->core->getEmpresaConfigValue($empresaId, 'empresa_documento_codigo_formato', '{PREFIJO}-{TIPO}-{CONSECUTIVO}');
+        $prefijoDefault = $this->core->getEmpresaConfigValue($empresaId, 'empresa_documento_codigo_prefijo', 'DOC');
+
         if (!$cfg || empty($cfg['codif_formato'])) {
-            $prefijo = $cfg['codif_prefijo'] ?? 'DOC';
+            $prefijo = $cfg['codif_prefijo'] ?? $prefijoDefault;
             $consecutivo = (int)($cfg['codif_consecutivo_actual'] ?? 0) + 1;
-            $this->core->update('conf_codificacion', ['codif_consecutivo_actual' => $consecutivo], 'codif_id = :id', ['id' => $cfg['codif_id'] ?? 0]);
-            return $prefijo . '-' . strtoupper(substr($tipo, 0, 3)) . '-' . str_pad((string)$consecutivo, 4, '0', STR_PAD_LEFT);
+            if ($cfg && !empty($cfg['codif_id'])) {
+                $this->core->update('conf_codificacion', ['codif_consecutivo_actual' => $consecutivo], 'codif_id = :id', ['id' => $cfg['codif_id']]);
+            }
+            $codigo = $formatoDefault;
+            $codigo = str_replace('{PREFIJO}', $prefijo, $codigo);
+            $codigo = str_replace('{TIPO}', strtoupper(substr($tipo, 0, 3)), $codigo);
+            $codigo = str_replace('{CONSECUTIVO}', str_pad((string)$consecutivo, 4, '0', STR_PAD_LEFT), $codigo);
+            $codigo = str_replace('{SEPARADOR}', '-', $codigo);
+            return $codigo;
         }
 
-        $prefijo = $cfg['codif_prefijo'] ?? 'DOC';
+        $prefijo = $cfg['codif_prefijo'] ?? $prefijoDefault;
         $consecutivo = (int)($cfg['codif_consecutivo_actual'] ?? 0) + 1;
         $this->core->update('conf_codificacion', ['codif_consecutivo_actual' => $consecutivo], 'codif_id = :id', ['id' => $cfg['codif_id']]);
 
         $codigo = $cfg['codif_formato'];
         $sep = $cfg['codif_separador'] ?? '-';
         $codigo = str_replace('{prefijo}', $prefijo, $codigo);
+        $codigo = str_replace('{PREFIJO}', $prefijo, $codigo);
         $codigo = str_replace('{tipo}', strtoupper(substr($tipo, 0, 3)), $codigo);
+        $codigo = str_replace('{TIPO}', strtoupper(substr($tipo, 0, 3)), $codigo);
         $codigo = str_replace('{consecutivo}', str_pad((string)$consecutivo, 4, '0', STR_PAD_LEFT), $codigo);
+        $codigo = str_replace('{CONSECUTIVO}', str_pad((string)$consecutivo, 4, '0', STR_PAD_LEFT), $codigo);
         $codigo = str_replace('{separador}', $sep, $codigo);
+        $codigo = str_replace('{SEPARADOR}', $sep, $codigo);
 
         return $codigo;
     }

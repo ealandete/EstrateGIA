@@ -19,6 +19,13 @@ class ConfigController {
         // Asignaciones usuario-empresa
         $asignaciones = $this->safeAll("SELECT ue.*, u.usuario_nombre, e.empresa_nombre FROM sys_usuario_empresa ue JOIN sys_usuarios u ON ue.ue_usuario_id=u.usuario_id JOIN plan_empresas e ON ue.ue_empresa_id=e.empresa_id");
 
+        // Cargar configuraciones por empresa para la nueva pestaña
+        $empresaConfigs = [];
+        foreach ($empresas as $e) {
+            $empresaConfigs[$e['empresa_id']] = $this->core->getEmpresaConfig((int)$e['empresa_id']);
+        }
+        $configClaves = array_keys(EstrateGiaCore::EMPRESA_CONFIG_DEFAULTS);
+
         $pageTitle = 'Configuración';
         ob_start(); require BASE_PATH . '/templates/admin/config.php';
         $content = ob_get_clean(); require BASE_PATH . '/templates/layout.php';
@@ -104,6 +111,53 @@ class ConfigController {
             ['empresa_id' => $empresaId, 'modulo' => $modulo],
             'Configuración de codificación documental');
         header('Location: /admin/config?codif_ok=1#tabCodificacion');
+        exit;
+    }
+
+    public function apiEmpresaConfig(): void {
+        $empresaId = $this->core->getEmpresaActiva();
+        $config = $this->core->getEmpresaConfig($empresaId);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'data' => $config]);
+        exit;
+    }
+
+    public function guardarConfigEmpresa(): void {
+        $empresaId = (int)$_POST['empresa_id'];
+        $configs = [];
+        $campos = [
+            'empresa_nombre_corto',
+            'empresa_logo_url',
+            'empresa_color_primario',
+            'empresa_color_secundario',
+            'empresa_modo_oscuro_default',
+            'empresa_idioma_default',
+            'empresa_timezone',
+            'empresa_formato_fecha',
+            'empresa_moneda',
+            'empresa_moneda_simbolo',
+            'empresa_documento_codigo_prefijo',
+            'empresa_documento_codigo_formato',
+            'empresa_proceso_codigo_formato',
+            'empresa_indicador_codigo_formato',
+        ];
+        foreach ($campos as $campo) {
+            $configs[$campo] = $_POST[$campo] ?? '';
+        }
+        // Manejar upload de logo
+        if (!empty($_FILES['logo_upload']['tmp_name'])) {
+            $uploadDir = BASE_PATH . '/uploads/logos/';
+            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+            $ext = pathinfo($_FILES['logo_upload']['name'], PATHINFO_EXTENSION);
+            $filename = 'logo_empresa_' . $empresaId . '.' . $ext;
+            $destPath = $uploadDir . $filename;
+            if (move_uploaded_file($_FILES['logo_upload']['tmp_name'], $destPath)) {
+                $configs['empresa_logo_url'] = '/uploads/logos/' . $filename;
+            }
+        }
+        $this->core->guardarEmpresaConfig($empresaId, $configs);
+        $this->core->audit('configurar', 'conf_empresa_config', null, null, $configs, 'Configuración de empresa');
+        header('Location: /admin/config?cfg_ok=1#tabConfigEmpresa');
         exit;
     }
 }

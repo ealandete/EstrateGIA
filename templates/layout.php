@@ -8,6 +8,15 @@ if ($currentPath === '/index.php' || $currentPath === '/') $currentPath = '/';
 // Detectar plan activo para contexto de navegación
 $navPlanId = ($_COOKIE['plan_activo'] ?? null) ?: ($_GET['plan_id'] ?? null);
 
+// Cargar configuración de empresa activa para estilos y parametrización
+$empresaActivaId = $core->getEmpresaActiva();
+$empresaConfig = $core->getEmpresaConfig($empresaActivaId);
+$empresaColorPrimario = $empresaConfig['empresa_color_primario']['valor'] ?? '#1a73e8';
+$empresaColorSecundario = $empresaConfig['empresa_color_secundario']['valor'] ?? '#1557b0';
+$empresaLogoUrl = $empresaConfig['empresa_logo_url']['valor'] ?? '';
+$empresaModoOscuro = (int)($empresaConfig['empresa_modo_oscuro_default']['valor'] ?? 0);
+$empresaIdioma = $empresaConfig['empresa_idioma_default']['valor'] ?? 'es';
+
 $menuGroups = [
     '📊 Estratégico' => [
         ['label' => 'Planeación',    'icon' => 'bullseye',     'path' => '/planeacion', 'planAware' => false],
@@ -69,7 +78,14 @@ if (defined('IS_AJAX') && IS_AJAX) {
     <link rel="stylesheet" href="/assets/css/fontawesome.min.css">
     <link rel="stylesheet" href="/assets/css/app.css?v=22">
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#1a73e8">
+    <meta name="theme-color" content="<?= $empresaColorPrimario ?>">
+    <style>
+        :root {
+            --primary-color: <?= $empresaColorPrimario ?>;
+            --primary-color-hover: <?= $empresaColorSecundario ?>;
+            --primary-color-light: <?= $empresaColorPrimario ?>1a;
+        }
+    </style>
     <script src="/assets/js/chart.min.js"></script>
 </head>
 <body>
@@ -77,8 +93,12 @@ if (defined('IS_AJAX') && IS_AJAX) {
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-brand">
-            <i class="fas fa-bullseye"></i>
-            <span>EstrateGIA</span>
+            <?php if ($empresaLogoUrl): ?>
+                <img src="<?= htmlspecialchars($empresaLogoUrl) ?>" alt="Logo" style="height:28px;width:auto;">
+            <?php else: ?>
+                <i class="fas fa-bullseye"></i>
+            <?php endif; ?>
+            <span><?= htmlspecialchars($empresaConfig['empresa_nombre_corto']['valor'] ?? 'EstrateGIA') ?></span>
         </div>
         <nav class="sidebar-nav">
             <?php $gid = 0; foreach ($menuGroups as $groupName => $items): $gid++; ?>
@@ -270,9 +290,15 @@ function updateMenuState(id, collapsed) {
     if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 })();
 
-// Modo oscuro
+// Modo oscuro - respeta configuración de empresa
 (function(){
-    if(localStorage.getItem('theme')==='dark'){document.documentElement.setAttribute('data-bs-theme','dark');document.querySelector('.fa-moon').classList.replace('fa-moon','fa-sun');}
+    var empresaDefault = <?= $empresaModoOscuro ?>;
+    var stored = localStorage.getItem('theme');
+    if (stored === 'dark' || (!stored && empresaDefault === 1)) {
+        document.documentElement.setAttribute('data-bs-theme','dark');
+        var icon = document.querySelector('.fa-moon');
+        if (icon) { icon.classList.replace('fa-moon','fa-sun'); }
+    }
 })();
 function toggleDarkMode(){
     var isDark = document.documentElement.getAttribute('data-bs-theme')==='dark';

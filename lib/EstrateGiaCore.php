@@ -338,6 +338,94 @@ class EstrateGiaCore {
     }
 
     // ========================================================================
+    // Configuración por Empresa (conf_empresa_config)
+    // ========================================================================
+
+    private static $empresaConfigCache = [];
+
+    const EMPRESA_CONFIG_DEFAULTS = [
+        'empresa_nombre_corto'              => ['valor' => '', 'tipo' => 'texto'],
+        'empresa_logo_url'                  => ['valor' => '', 'tipo' => 'imagen'],
+        'empresa_color_primario'            => ['valor' => '#1a73e8', 'tipo' => 'color'],
+        'empresa_color_secundario'          => ['valor' => '#1557b0', 'tipo' => 'color'],
+        'empresa_modo_oscuro_default'       => ['valor' => '0', 'tipo' => 'boolean'],
+        'empresa_idioma_default'            => ['valor' => 'es', 'tipo' => 'texto'],
+        'empresa_timezone'                  => ['valor' => 'America/Bogota', 'tipo' => 'texto'],
+        'empresa_formato_fecha'             => ['valor' => 'd/m/Y', 'tipo' => 'texto'],
+        'empresa_moneda'                    => ['valor' => 'COP', 'tipo' => 'texto'],
+        'empresa_moneda_simbolo'            => ['valor' => '$', 'tipo' => 'texto'],
+        'empresa_documento_codigo_prefijo'  => ['valor' => '', 'tipo' => 'texto'],
+        'empresa_documento_codigo_formato'  => ['valor' => '{PREFIJO}-{TIPO}-{CONSECUTIVO}', 'tipo' => 'texto'],
+        'empresa_proceso_codigo_formato'    => ['valor' => '{PREFIJO}-{TIPO}-{CONSECUTIVO}', 'tipo' => 'texto'],
+        'empresa_indicador_codigo_formato'  => ['valor' => 'IND-{CONSECUTIVO}', 'tipo' => 'texto'],
+    ];
+
+    public function getEmpresaConfig(int $empresaId): array {
+        if (isset(self::$empresaConfigCache[$empresaId])) {
+            return self::$empresaConfigCache[$empresaId];
+        }
+        try {
+            $rows = $this->fetchAll(
+                'SELECT config_clave, config_valor, config_tipo FROM conf_empresa_config WHERE empresa_id = :eid',
+                ['eid' => $empresaId]
+            );
+        } catch (\Exception $e) {
+            $rows = [];
+        }
+        $config = [];
+        foreach (self::EMPRESA_CONFIG_DEFAULTS as $clave => $def) {
+            $config[$clave] = $def;
+        }
+        foreach ($rows as $row) {
+            $config[$row['config_clave']] = ['valor' => $row['config_valor'], 'tipo' => $row['config_tipo']];
+        }
+        self::$empresaConfigCache[$empresaId] = $config;
+        return $config;
+    }
+
+    public function getEmpresaConfigValue(int $empresaId, string $clave, $default = null) {
+        $config = $this->getEmpresaConfig($empresaId);
+        if (isset($config[$clave])) {
+            $val = $config[$clave]['valor'];
+            if ($config[$clave]['tipo'] === 'boolean') return (int)$val;
+            if ($config[$clave]['tipo'] === 'numero') return is_numeric($val) ? (float)$val : $default;
+            return $val !== '' && $val !== null ? $val : ($default ?? self::EMPRESA_CONFIG_DEFAULTS[$clave]['valor'] ?? null);
+        }
+        return $default;
+    }
+
+    public function getEmpresaActiva(): int {
+        return (int)($_GET['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 1));
+    }
+
+    public function formatFechaEmpresa(?string $fecha, ?int $empresaId = null): string {
+        if (!$fecha) return '';
+        $empresaId = $empresaId ?? $this->getEmpresaActiva();
+        $formato = $this->getEmpresaConfigValue($empresaId, 'empresa_formato_fecha', 'd/m/Y');
+        $ts = strtotime($fecha);
+        return $ts ? date($formato, $ts) : $fecha;
+    }
+
+    public function formatMonedaEmpresa(float $monto, ?int $empresaId = null): string {
+        $empresaId = $empresaId ?? $this->getEmpresaActiva();
+        $simbolo = $this->getEmpresaConfigValue($empresaId, 'empresa_moneda_simbolo', '$');
+        return $simbolo . ' ' . number_format($monto, 2);
+    }
+
+    public function guardarEmpresaConfig(int $empresaId, array $configs): void {
+        foreach ($configs as $clave => $valor) {
+            $tipo = self::EMPRESA_CONFIG_DEFAULTS[$clave]['tipo'] ?? 'texto';
+            $this->execute(
+                "INSERT INTO conf_empresa_config (empresa_id, config_clave, config_valor, config_tipo, config_modulo)
+                 VALUES (?, ?, ?, ?, 'general')
+                 ON DUPLICATE KEY UPDATE config_valor = VALUES(config_valor), config_tipo = VALUES(config_tipo), updated_at = NOW()",
+                [$empresaId, $clave, $valor, $tipo]
+            );
+        }
+        unset(self::$empresaConfigCache[$empresaId]);
+    }
+
+    // ========================================================================
     // Utilidades
     // ========================================================================
 

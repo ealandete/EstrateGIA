@@ -561,6 +561,8 @@ $router->post('/admin/config/crear-empresa', function () { require_once BASE_PAT
 $router->post('/admin/config/editar-empresa', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->editarEmpresa(); });
 $router->post('/admin/config/guardar-personalizacion', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->guardarPersonalizacion(); });
 $router->post('/admin/config/codificacion-documental', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->guardarCodificacionDocumental(); });
+$router->get('/api/empresa/config', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->apiEmpresaConfig(); });
+$router->post('/admin/config/empresa/guardar', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->guardarConfigEmpresa(); });
 
 // ===== LICENCIAS (SUPER_ADMIN only) — Politica 23 §5.3 =====
 
