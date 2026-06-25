@@ -427,6 +427,9 @@ $router->get('/docs/openapi.json', function () {
     exit;
 });
 
+// ===== SSE DASHBOARD TIEMPO REAL =====
+$router->get('/sse/dashboard', function () { require BASE_PATH . '/sse_dashboard.php'; });
+
 // ===== TEST RUNNER =====
 $router->get('/tests', function () {
     Auth::guard();
