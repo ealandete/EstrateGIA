@@ -366,6 +366,7 @@ class AcreditacionController {
     // ========================================================================
     public function acreditacion(): void {
         $this->ensureColumn('cal_evidencias_acreditacion', 'evidencia_archivo_url', 'VARCHAR(500)');
+        $this->initTablesAcreditacion();
         $pm = new PlanManager();
         $empresaId = (int)($_GET['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
         $empresa = $pm->getEmpresa($empresaId);
@@ -433,19 +434,114 @@ class AcreditacionController {
             [$empresaId]
         );
 
+        $visitas = $this->safeAll(
+            "SELECT * FROM cal_acreditacion_visitas WHERE empresa_id=? ORDER BY visita_fecha_programada DESC",
+            [$empresaId]
+        );
+
+        $planesMejora = $this->safeAll(
+            "SELECT pm.*, e.estandar_codigo, e.estandar_nombre,
+                    CONCAT(u.usuario_nombre,' ',u.usuario_apellido) as responsable_nombre
+             FROM cal_planes_mejora pm
+             LEFT JOIN cal_estandares_acreditacion e ON pm.estandar_id=e.estandar_id
+             LEFT JOIN sys_usuarios u ON pm.plan_responsable_id=u.usuario_id
+             WHERE pm.empresa_id=? ORDER BY FIELD(pm.plan_estado,'abierto','en_progreso','vencido','cerrado'), pm.created_at DESC",
+            [$empresaId]
+        );
+
+        $seguimientos = $this->safeAll(
+            "SELECT s.* FROM cal_seguimiento s
+             JOIN cal_planes_mejora pm ON s.plan_id=pm.plan_id
+             WHERE pm.empresa_id=? ORDER BY s.seguimiento_fecha DESC",
+            [$empresaId]
+        );
+
+        $suaEstandares = $this->safeAll("SELECT * FROM cal_estandares_sua ORDER BY sua_eje, sua_grupo, sua_numero");
+
+        $usuarios = $this->safeAll("SELECT usuario_id, usuario_nombre, usuario_apellido FROM sys_usuarios WHERE usuario_activo=1 ORDER BY usuario_nombre");
+
+        $this->ensureColumn('cal_evidencias_acreditacion', 'evidencia_escala', "VARCHAR(20) DEFAULT '0-100'");
+        $this->ensureColumn('cal_evidencias_acreditacion', 'evidencia_nivel_sua', 'TINYINT NULL');
+
         $pageTitle = 'Acreditación - Dashboard de Cumplimiento';
         ob_start(); require BASE_PATH . '/templates/calidad/acreditacion.php';
         $content = ob_get_clean(); require BASE_PATH . '/templates/layout.php';
     }
 
+    private function initTablesAcreditacion(): void {
+        $this->core->execute("CREATE TABLE IF NOT EXISTS cal_acreditacion_visitas (
+            visita_id INT AUTO_INCREMENT PRIMARY KEY,
+            empresa_id INT NOT NULL,
+            ciclo_id INT NULL,
+            visita_tipo ENUM('autoevaluacion','visita_evaluacion','seguimiento','reacreditacion') DEFAULT 'visita_evaluacion',
+            visita_fecha_programada DATE,
+            visita_fecha_real DATE,
+            visita_evaluador_lider VARCHAR(200),
+            visita_evaluadores TEXT,
+            visita_hallazgos INT DEFAULT 0,
+            visita_no_conformidades INT DEFAULT 0,
+            visita_observaciones INT DEFAULT 0,
+            visita_informe_url VARCHAR(500),
+            visita_estado ENUM('programada','en_curso','completada','cancelada') DEFAULT 'programada',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_empresa_ciclo (empresa_id, ciclo_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        $this->core->execute("CREATE TABLE IF NOT EXISTS cal_planes_mejora (
+            plan_id INT AUTO_INCREMENT PRIMARY KEY,
+            empresa_id INT NOT NULL,
+            estandar_id INT,
+            visita_id INT NULL,
+            plan_accion TEXT NOT NULL,
+            plan_responsable_id INT,
+            plan_fecha_compromiso DATE,
+            plan_fecha_cierre DATE,
+            plan_evidencia_cierre TEXT,
+            plan_estado ENUM('abierto','en_progreso','cerrado','vencido') DEFAULT 'abierto',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_empresa_estandar (empresa_id, estandar_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        $this->core->execute("CREATE TABLE IF NOT EXISTS cal_seguimiento (
+            seguimiento_id INT AUTO_INCREMENT PRIMARY KEY,
+            plan_id INT NOT NULL,
+            seguimiento_fecha DATE NOT NULL,
+            seguimiento_avance DECIMAL(5,1) DEFAULT 0,
+            seguimiento_observaciones TEXT,
+            seguimiento_evidencia_url VARCHAR(500),
+            seguimiento_usuario_id INT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_plan (plan_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        $this->core->execute("CREATE TABLE IF NOT EXISTS cal_estandares_sua (
+            sua_id INT AUTO_INCREMENT PRIMARY KEY,
+            sua_grupo VARCHAR(100) NOT NULL,
+            sua_subgrupo VARCHAR(100),
+            sua_codigo VARCHAR(20) NOT NULL,
+            sua_numero INT NOT NULL,
+            sua_descripcion TEXT NOT NULL,
+            sua_tipo ENUM('indispensable','complementario','informacion') DEFAULT 'indispensable',
+            sua_eje ENUM('seguridad_paciente','humanizacion','gestion_tecnologia','enfoque_riesgo') DEFAULT 'seguridad_paciente',
+            UNIQUE KEY uk_codigo (sua_codigo)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+
     public function evaluarEstandar(): void {
         $empresaId = (int)$_POST['empresa_id'];
         $estandarId = (int)$_POST['estandar_id'];
+        $escala = $_POST['escala'] ?? '0-100';
 
-        $puntaje = 0;
         $cumplimiento = $_POST['cumplimiento'] ?? 'no_cumple';
-        if ($cumplimiento === 'cumple') $puntaje = 100;
-        elseif ($cumplimiento === 'cumple_parcial') $puntaje = (float)($_POST['puntaje'] ?? 50);
+        if ($escala === '1-5') {
+            $nivelSua = (int)($_POST['nivel_sua'] ?? 1);
+            $puntaje = ($nivelSua / 5) * 100;
+            $cumplimiento = $nivelSua >= 4 ? 'cumple' : ($nivelSua >= 2 ? 'cumple_parcial' : 'no_cumple');
+        } else {
+            if ($cumplimiento === 'cumple') $puntaje = 100;
+            elseif ($cumplimiento === 'cumple_parcial') $puntaje = (float)($_POST['puntaje'] ?? 50);
+            else $puntaje = (float)($_POST['puntaje'] ?? 0);
+        }
 
         $id = $this->safeInsert('cal_evidencias_acreditacion', [
             'evidencia_empresa_id' => $empresaId,
@@ -466,11 +562,16 @@ class AcreditacionController {
             }
         }
 
+        if ($escala === '1-5') {
+            $this->safeUpdate('cal_evidencias_acreditacion', ['evidencia_escala' => '1-5', 'evidencia_nivel_sua' => ($_POST['nivel_sua'] ?? null)], 'evidencia_id = ?', [$id]);
+        }
+
         EstrateGiaCore::getInstance()->logAction(Auth::userId(), 'evaluar', 'acreditacion', 'estandar', $id);
         header('Location: /acreditacion?evaluado=1'); exit;
     }
 
     public function reporteAcreditacion(): void {
+        $this->initTablesAcreditacion();
         $pm = new PlanManager();
         $empresaId = (int)($_GET['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
         $empresa = $pm->getEmpresa($empresaId);
@@ -501,6 +602,8 @@ class AcreditacionController {
         );
 
         $cumplen = count(array_filter($estandares, fn($e) => $e['ultimo_cumplimiento'] === 'cumple'));
+        $parcial = count(array_filter($estandares, fn($e) => $e['ultimo_cumplimiento'] === 'cumple_parcial'));
+        $noCumplen = count(array_filter($estandares, fn($e) => $e['ultimo_cumplimiento'] === 'no_cumple'));
         $total = count($estandares);
         $pct = $total > 0 ? round(($cumplen / $total) * 100, 1) : 0;
         $pctTotal = 0;
@@ -523,6 +626,211 @@ class AcreditacionController {
             $porTipo[$tipo]['puntaje_total'] += (float)($e['ultimo_puntaje'] ?? 0);
         }
 
+        $heatmapData = [];
+        foreach ($estandares as $e) {
+            $g = $e['estandar_grupo'];
+            if (!isset($heatmapData[$g])) $heatmapData[$g] = ['total' => 0, 'puntaje' => 0, 'cumple' => 0];
+            $heatmapData[$g]['total']++;
+            $heatmapData[$g]['puntaje'] += (float)($e['ultimo_puntaje'] ?? 0);
+            if (($e['ultimo_cumplimiento'] ?? '') === 'cumple') $heatmapData[$g]['cumple']++;
+        }
+
+        $planesMejora = $this->safeAll(
+            "SELECT pm.*, e.estandar_codigo FROM cal_planes_mejora pm
+             LEFT JOIN cal_estandares_acreditacion e ON pm.estandar_id=e.estandar_id
+             WHERE pm.empresa_id=? AND pm.plan_estado IN ('abierto','en_progreso')
+             ORDER BY pm.created_at DESC",
+            [$empresaId]
+        );
+
+        $visitas = $this->safeAll(
+            "SELECT * FROM cal_acreditacion_visitas WHERE empresa_id=? ORDER BY visita_fecha_programada DESC LIMIT 10",
+            [$empresaId]
+        );
+
         require BASE_PATH . '/templates/calidad/acreditacion_reporte.php';
+    }
+
+    // ========================================================================
+    // GESTIÓN DE VISITAS DE ACREDITACIÓN
+    // ========================================================================
+    public function crearVisita(): void {
+        $empresaId = (int)$_POST['empresa_id'];
+        $id = $this->safeInsert('cal_acreditacion_visitas', [
+            'empresa_id' => $empresaId,
+            'ciclo_id' => $_POST['ciclo_id'] ? (int)$_POST['ciclo_id'] : null,
+            'visita_tipo' => $_POST['visita_tipo'] ?? 'visita_evaluacion',
+            'visita_fecha_programada' => $_POST['visita_fecha_programada'] ?? date('Y-m-d'),
+            'visita_fecha_real' => $_POST['visita_fecha_real'] ?? null,
+            'visita_evaluador_lider' => $_POST['visita_evaluador_lider'] ?? '',
+            'visita_evaluadores' => $_POST['visita_evaluadores'] ?? '',
+            'visita_hallazgos' => (int)($_POST['visita_hallazgos'] ?? 0),
+            'visita_no_conformidades' => (int)($_POST['visita_no_conformidades'] ?? 0),
+            'visita_observaciones' => (int)($_POST['visita_observaciones'] ?? 0),
+            'visita_estado' => $_POST['visita_estado'] ?? 'programada',
+        ]);
+
+        if (!empty($_FILES['visita_informe']['tmp_name'])) {
+            $url = $this->handleUpload('visita_informe', 'visita_acreditacion_' . $id);
+            if ($url) {
+                $this->safeUpdate('cal_acreditacion_visitas', ['visita_informe_url' => $url], 'visita_id = ?', [$id]);
+            }
+        }
+
+        EstrateGiaCore::getInstance()->logAction(Auth::userId(), 'crear', 'acreditacion', 'visita', $id);
+        header('Location: /acreditacion?visita_creada=1#visitas'); exit;
+    }
+
+    // ========================================================================
+    // GESTIÓN DE PLANES DE MEJORA ESTRUCTURADOS
+    // ========================================================================
+    public function crearPlanMejora(): void {
+        $empresaId = (int)$_POST['empresa_id'];
+        $id = $this->safeInsert('cal_planes_mejora', [
+            'empresa_id' => $empresaId,
+            'estandar_id' => $_POST['estandar_id'] ? (int)$_POST['estandar_id'] : null,
+            'visita_id' => $_POST['visita_id'] ? (int)$_POST['visita_id'] : null,
+            'plan_accion' => $_POST['plan_accion'] ?? '',
+            'plan_responsable_id' => $_POST['plan_responsable_id'] ? (int)$_POST['plan_responsable_id'] : null,
+            'plan_fecha_compromiso' => $_POST['plan_fecha_compromiso'] ?? date('Y-m-d', strtotime('+30 days')),
+            'plan_estado' => 'abierto',
+        ]);
+
+        EstrateGiaCore::getInstance()->logAction(Auth::userId(), 'crear', 'acreditacion', 'plan_mejora', $id);
+        header('Location: /acreditacion?plan_creado=1#planes-mejora'); exit;
+    }
+
+    public function cerrarPlanMejora(int $planId): void {
+        $this->safeUpdate('cal_planes_mejora', [
+            'plan_estado' => 'cerrado',
+            'plan_fecha_cierre' => date('Y-m-d'),
+            'plan_evidencia_cierre' => $_POST['plan_evidencia_cierre'] ?? '',
+        ], 'plan_id = ?', [$planId]);
+
+        EstrateGiaCore::getInstance()->logAction(Auth::userId(), 'cerrar', 'acreditacion', 'plan_mejora', $planId);
+        header('Location: /acreditacion?plan_cerrado=1#planes-mejora'); exit;
+    }
+
+    // ========================================================================
+    // SEGUIMIENTO DE PLANES
+    // ========================================================================
+    public function crearSeguimiento(): void {
+        $planId = (int)$_POST['plan_id'];
+        $id = $this->safeInsert('cal_seguimiento', [
+            'plan_id' => $planId,
+            'seguimiento_fecha' => $_POST['seguimiento_fecha'] ?? date('Y-m-d'),
+            'seguimiento_avance' => (float)($_POST['seguimiento_avance'] ?? 0),
+            'seguimiento_observaciones' => $_POST['seguimiento_observaciones'] ?? '',
+            'seguimiento_usuario_id' => Auth::userId(),
+        ]);
+
+        if (!empty($_FILES['seguimiento_evidencia']['tmp_name'])) {
+            $url = $this->handleUpload('seguimiento_evidencia', 'seguimiento_' . $id);
+            if ($url) {
+                $this->safeUpdate('cal_seguimiento', ['seguimiento_evidencia_url' => $url], 'seguimiento_id = ?', [$id]);
+            }
+        }
+
+        $avance = (float)($_POST['seguimiento_avance'] ?? 0);
+        $newState = $avance >= 100 ? 'cerrado' : ($avance > 0 ? 'en_progreso' : 'abierto');
+        $updateData = ['plan_estado' => $newState];
+        if ($avance >= 100) { $updateData['plan_fecha_cierre'] = date('Y-m-d'); }
+        $this->safeUpdate('cal_planes_mejora', $updateData, 'plan_id = ?', [$planId]);
+
+        EstrateGiaCore::getInstance()->logAction(Auth::userId(), 'crear', 'acreditacion', 'seguimiento', $id);
+        header('Location: /acreditacion?seguimiento_creado=1#seguimiento'); exit;
+    }
+
+    // ========================================================================
+    // CARGA DE ESTÁNDARES SUA OFICIALES
+    // ========================================================================
+    public function cargarEstandaresSUA(): void {
+        $empresaId = (int)$_POST['empresa_id'];
+        $eje = $_POST['sua_eje'] ?? null;
+
+        $where = '';
+        $params = [];
+        if ($eje && $eje !== 'todos') {
+            $where = ' AND sua_eje = ?';
+            $params[] = $eje;
+        }
+
+        $suaEstandares = $this->safeAll(
+            "SELECT * FROM cal_estandares_sua WHERE 1=1 $where ORDER BY sua_eje, sua_grupo, sua_numero",
+            $params
+        );
+
+        $insertados = 0;
+        foreach ($suaEstandares as $s) {
+            $exists = $this->safeCount('cal_estandares_acreditacion', 'estandar_codigo = ?', [$s['sua_codigo']]);
+            if ($exists > 0) continue;
+
+            $tipo = ($s['sua_eje'] === 'seguridad_paciente') ? 'SUA' : 'SUA';
+            $this->safeInsert('cal_estandares_acreditacion', [
+                'estandar_grupo' => $s['sua_grupo'],
+                'estandar_codigo' => $s['sua_codigo'],
+                'estandar_nombre' => $s['sua_descripcion'],
+                'estandar_descripcion' => $s['sua_grupo'] . ' - ' . ($s['sua_subgrupo'] ?? '') . ' | ' . $s['sua_descripcion'],
+                'estandar_tipo' => $tipo,
+                'estandar_nivel' => $s['sua_tipo'] === 'indispensable' ? 'avanzado' : 'basico',
+                'estandar_escala' => '1-5',
+                'estandar_activo' => 1,
+            ]);
+            $insertados++;
+        }
+
+        EstrateGiaCore::getInstance()->logAction(Auth::userId(), 'cargar', 'acreditacion', 'estandares_sua', $insertados);
+        header('Location: /acreditacion?sua_cargados=' . $insertados); exit;
+    }
+
+    // ========================================================================
+    // CAMBIO DE FASE DEL CICLO DE ACREDITACIÓN (STATE MACHINE)
+    // ========================================================================
+    public function cambiarFase(): void {
+        $empresaId = (int)$_POST['empresa_id'];
+        $tipo = $_POST['nivel_estandar_tipo'] ?? 'SUA';
+        $nuevaFase = $_POST['nivel_fase'] ?? 'preparacion';
+
+        $valTransitions = [
+            'preparacion' => ['autoevaluacion', 'diagnostico'],
+            'autoevaluacion' => ['plan_mejora', 'preparacion'],
+            'plan_mejora' => ['visita_simulacro', 'implementacion'],
+            'implementacion' => ['visita_simulacro', 'plan_mejora'],
+            'visita_simulacro' => ['pre_visita', 'plan_mejora'],
+            'pre_visita' => ['visita_evaluacion', 'visita_simulacro'],
+            'visita_evaluacion' => ['informe_resultados', 'plan_mejora'],
+            'informe_resultados' => ['seguimiento', 'acreditado'],
+            'seguimiento' => ['reacreditacion', 'acreditado'],
+            'reacreditacion' => ['preparacion', 'acreditado'],
+        ];
+
+        $ciclo = $this->safeOne(
+            "SELECT * FROM cal_acreditacion_niveles WHERE nivel_empresa_id = ? AND nivel_estandar_tipo = ?",
+            [$empresaId, $tipo]
+        );
+
+        if (!$ciclo) {
+            $this->safeInsert('cal_acreditacion_niveles', [
+                'nivel_empresa_id' => $empresaId,
+                'nivel_estandar_tipo' => $tipo,
+                'nivel_puntaje_actual' => 0,
+                'nivel_puntaje_objetivo' => 90,
+                'nivel_fase' => $nuevaFase,
+            ]);
+        } else {
+            $faseActual = $ciclo['nivel_fase'] ?? 'preparacion';
+            $allowed = $valTransitions[$faseActual] ?? [];
+            if (!in_array($nuevaFase, $allowed)) {
+                header('Location: /acreditacion?fase_error=1');
+                exit;
+            }
+            $this->safeUpdate('cal_acreditacion_niveles', [
+                'nivel_fase' => $nuevaFase,
+                'nivel_puntaje_objetivo' => (float)($_POST['nivel_puntaje_objetivo'] ?? 90),
+            ], 'nivel_empresa_id = ? AND nivel_estandar_tipo = ?', [$empresaId, $tipo]);
+        }
+
+        EstrateGiaCore::getInstance()->logAction(Auth::userId(), 'cambiar_fase', 'acreditacion', 'ciclo', 0);
+        header('Location: /acreditacion?fase_cambiada=1#ciclo'); exit;
     }
 }

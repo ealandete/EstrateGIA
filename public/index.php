@@ -174,6 +174,12 @@ $router->get('/api/calidad/criterios-ministerio', function () { require_once BAS
 $router->get('/acreditacion', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->acreditacion(); });
 $router->post('/acreditacion/evaluar', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->evaluarEstandar(); });
 $router->get('/acreditacion/reporte', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->reporteAcreditacion(); });
+$router->post('/acreditacion/visita/crear', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->crearVisita(); });
+$router->post('/acreditacion/plan-mejora/crear', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->crearPlanMejora(); });
+$router->post('/acreditacion/plan-mejora/{id}/cerrar', function ($id) { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->cerrarPlanMejora((int)$id); });
+$router->post('/acreditacion/seguimiento/crear', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->crearSeguimiento(); });
+$router->post('/acreditacion/cargar-estandares-sua', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->cargarEstandaresSUA(); });
+$router->post('/acreditacion/ciclo/cambiar-fase', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->cambiarFase(); });
 
 // ===== NC =====
 $router->get('/nc', function () { require_once BASE_PATH.'/src/Controllers/NCController.php'; (new NCController())->index(); });

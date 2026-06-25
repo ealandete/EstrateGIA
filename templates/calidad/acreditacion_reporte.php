@@ -2,7 +2,17 @@
 $cumplen = count(array_filter($estandares, fn($e)=>($e['ultimo_cumplimiento']??'')==='cumple'));
 $total = count($estandares);
 $pct = $total>0 ? round($cumplen/$total*100,1) : 0;
-$tipoLabels = ['SUA'=>'Sist. Único Acreditación','ISO7101'=>'ISO 7101:2023','Habilitacion'=>'Habilitación'];
+$pctTotal = $pctTotal ?? 0;
+$noCumplen = $noCumplen ?? count(array_filter($estandares, fn($e)=>($e['ultimo_cumplimiento']??'')==='no_cumple'));
+$parcial = $parcial ?? count(array_filter($estandares, fn($e)=>($e['ultimo_cumplimiento']??'')==='cumple_parcial'));
+$ncs = $ncs ?? [];
+$pamecData = $pamecData ?? [];
+$riesgos = $riesgos ?? [];
+$porTipo = $porTipo ?? [];
+$heatmapData = $heatmapData ?? [];
+$planesMejora = $planesMejora ?? [];
+$visitas = $visitas ?? [];
+$tipoLabels = ['SUA'=>'Sist. Unico Acreditacion','ISO7101'=>'ISO 7101:2023','Habilitacion'=>'Habilitacion'];
 ?>
 <!DOCTYPE html>
 <html lang="es"><head><meta charset="UTF-8"><title>Informe de Acreditación - <?= htmlspecialchars($empresa['empresa_nombre']) ?></title>
@@ -60,6 +70,57 @@ td{padding:8px;border-bottom:1px solid #eee}
     </div>
 </div>
 <?php endforeach; ?>
+
+<!-- Heatmap de Grupos -->
+<?php if (!empty($heatmapData)): ?>
+<h3 class="section-title page-break">1.1 Heatmap de Cumplimiento por Grupo</h3>
+<div class="row mb-3">
+<?php foreach ($heatmapData as $g => $d):
+    $pctG = $d['total']>0 ? round(($d['cumple']/$d['total'])*100,1) : 0;
+    $promG = $d['total']>0 ? round($d['puntaje']/$d['total'],1) : 0;
+    $color = $pctG>=90 ? '#28a745' : ($pctG>=60 ? '#ffc107' : '#dc3545');
+?>
+<div class="col-6 mb-2">
+<div style="background:<?= $color ?>15;border-left:4px solid <?= $color ?>;padding:10px;border-radius:4px">
+    <strong><?= htmlspecialchars($g) ?></strong><br>
+    <small><?= $pctG ?>% (<?= $d['cumple'] ?>/<?= $d['total'] ?>) · Prom: <?= $promG ?>%</small>
+    <div class="progress mt-1" style="height:6px"><div class="progress-bar" style="width:<?= $pctG ?>%;background:<?= $color ?>"></div></div>
+</div>
+</div>
+<?php endforeach; ?>
+</div>
+<?php endif; ?>
+
+<!-- Analisis de Brechas y Planes de Mejora -->
+<?php if (!empty($planesMejora)): ?>
+<h3 class="section-title page-break">1.2 Planes de Mejora Activos</h3>
+<table><thead><tr><th>Estandar</th><th>Accion</th><th>Estado</th><th>F. Compromiso</th></tr></thead><tbody>
+<?php foreach ($planesMejora as $pm): ?>
+<tr>
+    <td><?= htmlspecialchars($pm['estandar_codigo'] ?? '-') ?></td>
+    <td><?= htmlspecialchars(substr($pm['plan_accion'],0,100)) ?></td>
+    <td><?= $pm['plan_estado'] ?></td>
+    <td><?= $pm['plan_fecha_compromiso'] ? date('d/m/Y', strtotime($pm['plan_fecha_compromiso'])) : '-' ?></td>
+</tr>
+<?php endforeach; ?></tbody></table>
+<?php endif; ?>
+
+<!-- Visitas de Acreditacion -->
+<?php if (!empty($visitas)): ?>
+<h3 class="section-title page-break">1.3 Visitas de Acreditacion</h3>
+<table><thead><tr><th>Tipo</th><th>F. Programada</th><th>F. Real</th><th>Evaluador Lider</th><th>Hallazgos</th><th>NC</th><th>Estado</th></tr></thead><tbody>
+<?php foreach ($visitas as $v): ?>
+<tr>
+    <td><?= str_replace('_',' ',ucfirst($v['visita_tipo'])) ?></td>
+    <td><?= $v['visita_fecha_programada'] ? date('d/m/Y', strtotime($v['visita_fecha_programada'])) : '-' ?></td>
+    <td><?= $v['visita_fecha_real'] ? date('d/m/Y', strtotime($v['visita_fecha_real'])) : '-' ?></td>
+    <td><?= htmlspecialchars($v['visita_evaluador_lider'] ?? '') ?></td>
+    <td><?= $v['visita_hallazgos'] ?></td>
+    <td><?= $v['visita_no_conformidades'] ?></td>
+    <td><?= $v['visita_estado'] ?></td>
+</tr>
+<?php endforeach; ?></tbody></table>
+<?php endif; ?>
 
 <!-- Estándares detallados -->
 <h3 class="section-title page-break">2. Detalle de Estándares Evaluados</h3>
