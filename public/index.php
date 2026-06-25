@@ -584,6 +584,15 @@ $router->post('/admin/config/codificacion-documental', function () { require_onc
 $router->get('/api/empresa/config', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->apiEmpresaConfig(); });
 $router->post('/admin/config/empresa/guardar', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->guardarConfigEmpresa(); });
 
+// ===== SISTEMA INTEGRADO ISO (CAPA, Politicas, Revision Direccion, Contexto, Comunicaciones) =====
+$router->get('/sistema', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->sistemaIntegrado(); });
+$router->post('/sistema/capa/crear', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->crearCAPA(); });
+$router->post('/sistema/capa/cerrar', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->cerrarCAPA(); });
+$router->post('/sistema/revision/crear', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->crearRevisionDireccion(); });
+$router->post('/sistema/politica/guardar', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->guardarPolitica(); });
+$router->post('/sistema/contexto/guardar', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->guardarContexto(); });
+$router->post('/sistema/comunicacion/guardar', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->guardarComunicacion(); });
+
 // ===== LICENCIAS (SUPER_ADMIN only) — Politica 23 §5.3 =====
 
 // ===== DESCARGAS =====

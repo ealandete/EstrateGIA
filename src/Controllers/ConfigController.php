@@ -160,4 +160,57 @@ class ConfigController {
         header('Location: /admin/config?cfg_ok=1#tabConfigEmpresa');
         exit;
     }
+
+    public function sistemaIntegrado(): void {
+        $empresaId = (int)($_GET['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $politicas = $this->safeAll("SELECT * FROM sys_politicas WHERE empresa_id=? AND politica_activa=1", [$empresaId]);
+        $capas = $this->safeAll("SELECT * FROM sys_capa WHERE empresa_id=? ORDER BY FIELD(capa_estado,'abierta','en_progreso','vencida','cerrada'), created_at DESC", [$empresaId]);
+        $revisiones = $this->safeAll("SELECT * FROM sys_revision_direccion WHERE empresa_id=? ORDER BY revision_anio DESC", [$empresaId]);
+        $contextos = $this->safeAll("SELECT * FROM sys_contexto WHERE empresa_id=? AND contexto_activo=1 ORDER BY contexto_tipo", [$empresaId]);
+        $comunicaciones = $this->safeAll("SELECT * FROM sys_comunicaciones WHERE empresa_id=? AND comunicacion_activo=1 ORDER BY comunicacion_modulo, comunicacion_tipo", [$empresaId]);
+        $pageTitle = 'Sistema Integrado de Gestión';
+        ob_start();
+        echo '<div class="container-fluid p-3"><h4><i class="fas fa-sitemap me-2"></i>Sistema Integrado de Gestión ISO</h4>';
+        require BASE_PATH . '/templates/sistema_integrado.php';
+        echo '</div>';
+        $content = ob_get_clean(); require BASE_PATH . '/templates/layout.php';
+    }
+
+    public function crearCAPA(): void {
+        $empresaId = (int)($_POST['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $this->safeInsert('sys_capa', ['empresa_id' => $empresaId, 'capa_tipo' => $_POST['tipo'] ?? 'correctiva', 'capa_origen' => $_POST['origen'] ?? 'nc', 'capa_modulo' => $_POST['modulo'] ?? 'general', 'capa_descripcion' => $_POST['descripcion'] ?? '', 'capa_analisis_causa' => $_POST['analisis_causa'] ?? '', 'capa_accion' => $_POST['accion'] ?? '', 'capa_responsable_id' => $_POST['responsable_id'] ? (int)$_POST['responsable_id'] : Auth::userId(), 'capa_fecha_compromiso' => $_POST['fecha_compromiso'] ?? null]);
+        header('Location: /sistema?capa_ok=1'); exit;
+    }
+
+    public function cerrarCAPA(): void {
+        $id = (int)$_POST['capa_id'];
+        $this->safeUpdate('sys_capa', ['capa_estado' => 'cerrada', 'capa_fecha_cierre' => date('Y-m-d'), 'capa_verificacion_eficacia' => $_POST['verificacion'] ?? ''], 'capa_id=?', [$id]);
+        header('Location: /sistema?capa_ok=1'); exit;
+    }
+
+    public function crearRevisionDireccion(): void {
+        $empresaId = (int)($_POST['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $this->safeInsert('sys_revision_direccion', ['empresa_id' => $empresaId, 'revision_anio' => $_POST['anio'] ?? date('Y'), 'revision_fecha' => $_POST['fecha'] ?? date('Y-m-d'), 'revision_participantes' => $_POST['participantes'] ?? '', 'revision_alcance' => $_POST['alcance'] ?? 'integrada', 'revision_compromisos' => $_POST['compromisos'] ?? '']);
+        header('Location: /sistema?rev_ok=1'); exit;
+    }
+
+    public function guardarPolitica(): void {
+        $empresaId = (int)($_POST['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $existente = $this->safeOne("SELECT politica_id FROM sys_politicas WHERE empresa_id=? AND politica_tipo=? AND politica_activa=1", [$empresaId, $_POST['tipo'] ?? 'calidad']);
+        if ($existente) $this->safeUpdate('sys_politicas', ['politica_activa' => 0], 'politica_id=?', [(int)$existente['politica_id']]);
+        $this->safeInsert('sys_politicas', ['empresa_id' => $empresaId, 'politica_tipo' => $_POST['tipo'] ?? 'calidad', 'politica_texto' => $_POST['texto'] ?? '', 'politica_fecha_aprobacion' => $_POST['fecha_aprobacion'] ?? date('Y-m-d'), 'politica_firmante' => $_POST['firmante'] ?? '', 'politica_version' => (int)($existente['politica_version'] ?? 0) + 1]);
+        header('Location: /sistema?pol_ok=1'); exit;
+    }
+
+    public function guardarContexto(): void {
+        $empresaId = (int)($_POST['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $this->safeInsert('sys_contexto', ['empresa_id' => $empresaId, 'contexto_modulo' => $_POST['modulo'] ?? 'integrado', 'contexto_tipo' => $_POST['tipo'] ?? 'fortaleza', 'contexto_descripcion' => $_POST['descripcion'] ?? '', 'contexto_impacto' => $_POST['impacto'] ?? 'medio']);
+        header('Location: /sistema?ctx_ok=1'); exit;
+    }
+
+    public function guardarComunicacion(): void {
+        $empresaId = (int)($_POST['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $this->safeInsert('sys_comunicaciones', ['empresa_id' => $empresaId, 'comunicacion_modulo' => $_POST['modulo'] ?? 'integrada', 'comunicacion_tipo' => $_POST['tipo'] ?? 'interna', 'comunicacion_que' => $_POST['que'] ?? '', 'comunicacion_cuando' => $_POST['cuando'] ?? '', 'comunicacion_a_quien' => $_POST['a_quien'] ?? '', 'comunicacion_como' => $_POST['como'] ?? '', 'comunicacion_quien' => $_POST['quien'] ?? '']);
+        header('Location: /sistema?com_ok=1'); exit;
+    }
 }
