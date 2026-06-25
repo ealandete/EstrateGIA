@@ -170,6 +170,21 @@ $router->post('/calidad/checklist/eliminar', function () { require_once BASE_PAT
 // ===== HABILITACION (Res 3100/2019) =====
 $router->get('/habilitacion', function () { require_once BASE_PATH.'/src/Controllers/CalidadController.php'; (new CalidadController())->habilitacionDashboard(); });
 $router->post('/habilitacion/estandar/evaluar', function () { require_once BASE_PATH.'/src/Controllers/CalidadController.php'; (new CalidadController())->evaluarEstandarHabilitacion(); });
+
+// ===== FARMACOVIGILANCIA (Res 1403/2007) =====
+$router->get('/farmacovigilancia', function () { require_once BASE_PATH.'/src/Controllers/CalidadController.php'; (new CalidadController())->farmacovigilancia(); });
+$router->post('/farmacovigilancia/evento/crear', function () { require_once BASE_PATH.'/src/Controllers/CalidadController.php'; (new CalidadController())->crearEventoFarmaco(); });
+$router->post('/farmacovigilancia/evento/reportar-invima', function () { require_once BASE_PATH.'/src/Controllers/CalidadController.php'; (new CalidadController())->reportarInvimaFarmaco(); });
+
+// ===== TECNOVIGILANCIA (Res 4816/2008) =====
+$router->get('/tecnovigilancia', function () { require_once BASE_PATH.'/src/Controllers/CalidadController.php'; (new CalidadController())->tecnovigilancia(); });
+$router->post('/tecnovigilancia/evento/crear', function () { require_once BASE_PATH.'/src/Controllers/CalidadController.php'; (new CalidadController())->crearEventoTecno(); });
+$router->post('/tecnovigilancia/evento/reportar-invima', function () { require_once BASE_PATH.'/src/Controllers/CalidadController.php'; (new CalidadController())->reportarInvimaTecno(); });
+
+// ===== RIPS (Res 3374/2000) =====
+$router->get('/rips', function () { require_once BASE_PATH.'/src/Controllers/CalidadController.php'; (new CalidadController())->ripsDashboard(); });
+$router->post('/rips/crear', function () { require_once BASE_PATH.'/src/Controllers/CalidadController.php'; (new CalidadController())->crearRIPS(); });
+$router->get('/rips/exportar/{periodo}', function ($periodo) { require_once BASE_PATH.'/src/Controllers/CalidadController.php'; (new CalidadController())->exportarRIPS($periodo); });
 $router->get('/calidad/checklist', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->verChecklist(); });
 $router->post('/calidad/riesgos/crear', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->crearRiesgo(); });
 $router->get('/api/calidad/criterios-ministerio', function () { require_once BASE_PATH.'/src/Controllers/CalidadController.php'; (new CalidadController())->cargarCriteriosMinisterio(); });

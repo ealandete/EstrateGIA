@@ -232,4 +232,103 @@ class CalidadController {
         $this->safeUpdate('cal_habilitacion_estandares', ['he_cumple' => $_POST['cumple'] ?? 'no', 'he_evidencia' => $_POST['evidencia'] ?? '', 'he_fecha_verificacion' => date('Y-m-d')], 'he_id = ?', [$heId]);
         header('Location: /habilitacion?evaluado=1'); exit;
     }
+
+    // ============================================================
+    // FARMACOVIGILANCIA
+    // ============================================================
+    public function farmacovigilancia(): void {
+        $empresaId = (int)($_GET['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $medicamentos = $this->safeAll("SELECT * FROM far_medicamentos WHERE empresa_id=? AND med_activo=1 ORDER BY med_clasificacion, med_nombre_generico", [$empresaId]);
+        $eventos = $this->safeAll("SELECT ev.*, m.med_nombre_generico, m.med_laboratorio FROM far_eventos_adversos ev JOIN far_medicamentos m ON ev.med_id=m.med_id WHERE ev.empresa_id=? ORDER BY ev.evento_fecha_reporte DESC", [$empresaId]);
+        $pageTitle = 'Farmacovigilancia - Res 1403/2007';
+        ob_start(); require BASE_PATH . '/templates/calidad/farmacovigilancia.php';
+        $content = ob_get_clean(); require BASE_PATH . '/templates/layout.php';
+    }
+    public function crearEventoFarmaco(): void {
+        $empresaId = (int)($_POST['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $this->safeInsert('far_eventos_adversos', [
+            'empresa_id' => $empresaId, 'med_id' => (int)$_POST['med_id'], 'evento_tipo' => $_POST['tipo'] ?? 'reaccion_adversa',
+            'evento_paciente_identificacion' => $_POST['paciente_id'] ?? '', 'evento_paciente_edad' => (int)($_POST['edad'] ?? 0),
+            'evento_paciente_sexo' => $_POST['sexo'] ?? null, 'evento_fecha_ocurrencia' => $_POST['fecha_ocurrencia'] ?? date('Y-m-d'),
+            'evento_fecha_reporte' => date('Y-m-d'), 'evento_descripcion' => $_POST['descripcion'] ?? '',
+            'evento_dosis_administrada' => $_POST['dosis'] ?? '', 'evento_via_administracion' => $_POST['via'] ?? '',
+            'evento_lote' => $_POST['lote'] ?? '', 'evento_gravedad' => $_POST['gravedad'] ?? 'moderada',
+            'evento_causalidad' => $_POST['causalidad'] ?? 'posible', 'evento_responsable_id' => Auth::userId(),
+        ]);
+        header('Location: /farmacovigilancia?ok=1'); exit;
+    }
+    public function reportarInvimaFarmaco(): void {
+        $id = (int)$_POST['evento_id'];
+        $this->safeUpdate('far_eventos_adversos', ['evento_reporte_invima' => 1, 'evento_fecha_reporte_invima' => date('Y-m-d'), 'evento_invima_folio' => $_POST['folio'] ?? '', 'evento_estado' => 'cerrado'], 'evento_id = ?', [$id]);
+        header('Location: /farmacovigilancia?invima=1'); exit;
+    }
+
+    // ============================================================
+    // TECNOVIGILANCIA
+    // ============================================================
+    public function tecnovigilancia(): void {
+        $empresaId = (int)($_GET['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $dispositivos = $this->safeAll("SELECT * FROM tec_dispositivos WHERE empresa_id=? AND disp_activo=1 ORDER BY disp_clasificacion_riesgo DESC, disp_nombre", [$empresaId]);
+        $eventos = $this->safeAll("SELECT ev.*, d.disp_nombre, d.disp_marca FROM tec_eventos_adversos ev JOIN tec_dispositivos d ON ev.disp_id=d.disp_id WHERE ev.empresa_id=? ORDER BY ev.tec_evento_fecha_reporte DESC", [$empresaId]);
+        $pageTitle = 'Tecnovigilancia - Res 4816/2008';
+        ob_start(); require BASE_PATH . '/templates/calidad/tecnovigilancia.php';
+        $content = ob_get_clean(); require BASE_PATH . '/templates/layout.php';
+    }
+    public function crearEventoTecno(): void {
+        $empresaId = (int)($_POST['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $this->safeInsert('tec_eventos_adversos', [
+            'empresa_id' => $empresaId, 'disp_id' => (int)$_POST['disp_id'], 'tec_evento_tipo' => $_POST['tipo'] ?? 'falla_funcionamiento',
+            'tec_evento_paciente_identificacion' => $_POST['paciente_id'] ?? '', 'tec_evento_fecha_ocurrencia' => $_POST['fecha_ocurrencia'] ?? date('Y-m-d'),
+            'tec_evento_fecha_reporte' => date('Y-m-d'), 'tec_evento_descripcion' => $_POST['descripcion'] ?? '',
+            'tec_evento_gravedad' => $_POST['gravedad'] ?? 'moderada', 'tec_evento_accion_inmediata' => $_POST['accion'] ?? '',
+            'tec_evento_responsable_id' => Auth::userId(),
+        ]);
+        header('Location: /tecnovigilancia?ok=1'); exit;
+    }
+    public function reportarInvimaTecno(): void {
+        $id = (int)$_POST['evento_id'];
+        $this->safeUpdate('tec_eventos_adversos', ['tec_evento_reporte_invima' => 1, 'tec_evento_fecha_reporte_invima' => date('Y-m-d'), 'tec_evento_invima_folio' => $_POST['folio'] ?? '', 'tec_evento_estado' => 'cerrado'], 'tec_evento_id = ?', [$id]);
+        header('Location: /tecnovigilancia?invima=1'); exit;
+    }
+
+    // ============================================================
+    // RIPS
+    // ============================================================
+    public function ripsDashboard(): void {
+        $empresaId = (int)($_GET['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $periodo = $_GET['periodo'] ?? date('Y-m');
+        $rips = $this->safeAll("SELECT * FROM cal_rips WHERE empresa_id=? AND rips_periodo=? ORDER BY rips_fecha_ingreso DESC", [$empresaId, $periodo]);
+        $resumen = $this->safeAll("SELECT rips_tipo, COUNT(*) as total, SUM(rips_valor) as valor_total FROM cal_rips WHERE empresa_id=? AND rips_periodo=? GROUP BY rips_tipo", [$empresaId, $periodo]);
+        $pageTitle = 'RIPS - Registro Individual de Prestaciones';
+        ob_start(); require BASE_PATH . '/templates/calidad/rips.php';
+        $content = ob_get_clean(); require BASE_PATH . '/templates/layout.php';
+    }
+    public function crearRIPS(): void {
+        $empresaId = (int)($_POST['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $this->safeInsert('cal_rips', [
+            'empresa_id' => $empresaId, 'rips_periodo' => $_POST['periodo'] ?? date('Y-m'), 'rips_tipo' => $_POST['tipo'] ?? 'consulta',
+            'rips_paciente_tipo_id' => $_POST['tipo_id'] ?? '', 'rips_paciente_id' => $_POST['paciente_id'] ?? '',
+            'rips_paciente_nombre' => $_POST['nombre'] ?? '', 'rips_paciente_edad' => (int)($_POST['edad'] ?? 0),
+            'rips_paciente_sexo' => $_POST['sexo'] ?? null, 'rips_paciente_regimen' => $_POST['regimen'] ?? 'contributivo',
+            'rips_fecha_ingreso' => $_POST['fecha_ingreso'] ?? date('Y-m-d'), 'rips_diagnostico_principal' => $_POST['diagnostico'] ?? '',
+            'rips_codigo_cups' => $_POST['cups'] ?? '', 'rips_finalidad' => $_POST['finalidad'] ?? 'diagnostico',
+            'rips_ambito' => $_POST['ambito'] ?? 'ambulatorio', 'rips_forma_pago' => $_POST['forma_pago'] ?? 'evento',
+            'rips_valor' => (float)($_POST['valor'] ?? 0), 'rips_eps' => $_POST['eps'] ?? '',
+        ]);
+        header('Location: /rips?ok=1'); exit;
+    }
+    public function exportarRIPS(string $periodo): void {
+        $empresaId = (int)($_GET['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $rips = $this->safeAll("SELECT * FROM cal_rips WHERE empresa_id=? AND rips_periodo=? ORDER BY rips_fecha_ingreso", [$empresaId, $periodo]);
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="RIPS_' . $periodo . '.csv"');
+        $out = fopen('php://output', 'w');
+        fputcsv($out, ['Tipo ID','Num ID','Nombre','Edad','Sexo','Regimen','Fecha Ingreso','Hora','Fecha Egreso','DX Principal','DX Relacionado','Causa Externa','CUPS','CUPS2','CUPS3','Finalidad','Ambito','Forma Pago','Valor','EPS']);
+        foreach ($rips as $r) {
+            fputcsv($out, [$r['rips_paciente_tipo_id'], $r['rips_paciente_id'], $r['rips_paciente_nombre'], $r['rips_paciente_edad'], $r['rips_paciente_sexo'], $r['rips_paciente_regimen'], $r['rips_fecha_ingreso'], $r['rips_hora_ingreso'], $r['rips_fecha_egreso'], $r['rips_diagnostico_principal'], $r['rips_diagnostico_relacionado'], $r['rips_causa_externa'], $r['rips_codigo_cups'], $r['rips_codigo_cups_2'], $r['rips_codigo_cups_3'], $r['rips_finalidad'], $r['rips_ambito'], $r['rips_forma_pago'], $r['rips_valor'], $r['rips_eps']]);
+        }
+        fclose($out);
+        $this->safeUpdate('cal_rips', ['rips_exportado' => 1, 'rips_fecha_exportacion' => date('Y-m-d')], 'empresa_id = ? AND rips_periodo = ? AND rips_exportado = 0', [$empresaId, $periodo]);
+        exit;
+    }
 }
