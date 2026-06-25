@@ -179,6 +179,8 @@ $router->post('/acreditacion/plan-mejora/crear', function () { require_once BASE
 $router->post('/acreditacion/plan-mejora/{id}/cerrar', function ($id) { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->cerrarPlanMejora((int)$id); });
 $router->post('/acreditacion/seguimiento/crear', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->crearSeguimiento(); });
 $router->post('/acreditacion/cargar-estandares-sua', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->cargarEstandaresSUA(); });
+$router->post('/acreditacion/evaluar-servicio', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->evaluarPorServicio(); });
+$router->get('/acreditacion/api/heatmap', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->apiServicioHeatmap(); });
 $router->post('/acreditacion/ciclo/cambiar-fase', function () { require_once BASE_PATH.'/src/Controllers/AcreditacionController.php'; (new AcreditacionController())->cambiarFase(); });
 
 // ===== NC =====
@@ -700,6 +702,48 @@ $router->get('/api/alertas/vencimientos', function () {
         ];
     }
     $resumen['metas_ambientales_bajo_avance'] = count($metasBajoAvance);
+
+    $planesAcreditacionVencer = $core->fetchAll(
+        "SELECT plan_id, plan_accion, plan_fecha_compromiso, e.estandar_codigo, e.estandar_descripcion 
+         FROM cal_planes_mejora p 
+         JOIN cal_estandares_acreditacion e ON p.estandar_id = e.estandar_id 
+         WHERE p.empresa_id=? AND p.plan_estado IN ('abierto','en_progreso') 
+         AND p.plan_fecha_compromiso <= DATE_ADD(CURDATE(), INTERVAL ? DAY) 
+         AND p.plan_fecha_compromiso >= CURDATE()
+         ORDER BY p.plan_fecha_compromiso ASC",
+        [$empresaId, $dias_corte]
+    );
+    foreach ($planesAcreditacionVencer as $p) {
+        $alertas[] = [
+            'tipo' => 'plan_mejora_acreditacion',
+            'nombre' => $p['estandar_codigo'] . ' - ' . mb_strimwidth($p['plan_accion'], 0, 60, '...'),
+            'fecha_limite' => $p['plan_fecha_compromiso'],
+            'dias_restantes' => max(0, (int)((strtotime($p['plan_fecha_compromiso']) - time()) / 86400)),
+            'color' => '#6f42c1',
+            'link' => '/acreditacion',
+        ];
+    }
+    $resumen['planes_acreditacion'] = count($planesAcreditacionVencer);
+
+    $visitasProgramadas = $core->fetchAll(
+        "SELECT visita_id, visita_tipo, visita_fecha_programada FROM cal_acreditacion_visitas 
+         WHERE empresa_id=? AND visita_estado='programada' 
+         AND visita_fecha_programada <= DATE_ADD(CURDATE(), INTERVAL ? DAY) 
+         AND visita_fecha_programada >= CURDATE()
+         ORDER BY visita_fecha_programada ASC",
+        [$empresaId, $dias_corte]
+    );
+    foreach ($visitasProgramadas as $v) {
+        $alertas[] = [
+            'tipo' => 'visita_acreditacion',
+            'nombre' => 'Visita de ' . $v['visita_tipo'],
+            'fecha_limite' => $v['visita_fecha_programada'],
+            'dias_restantes' => max(0, (int)((strtotime($v['visita_fecha_programada']) - time()) / 86400)),
+            'color' => '#e83e8c',
+            'link' => '/acreditacion',
+        ];
+    }
+    $resumen['visitas_acreditacion'] = count($visitasProgramadas);
 
     usort($alertas, fn($a, $b) => ($a['dias_restantes'] ?? 365) - ($b['dias_restantes'] ?? 365));
 

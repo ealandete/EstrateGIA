@@ -833,4 +833,60 @@ class AcreditacionController {
         EstrateGiaCore::getInstance()->logAction(Auth::userId(), 'cambiar_fase', 'acreditacion', 'ciclo', 0);
         header('Location: /acreditacion?fase_cambiada=1#ciclo'); exit;
     }
+
+    public function evaluarPorServicio(): void {
+        $empresaId = (int)($_POST['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $estandarId = (int)$_POST['estandar_id'];
+        $servicioId = (int)$_POST['servicio_id'];
+        $cumplimiento = $_POST['cumplimiento'] ?? 'sin_evaluar';
+        $puntaje = (int)($_POST['puntaje'] ?? 0);
+        $observaciones = $_POST['observaciones'] ?? '';
+        $archivo = $_FILES['archivo'] ?? null;
+        $archivoUrl = '';
+        if ($archivo && $archivo['error'] === UPLOAD_ERR_OK) {
+            $dest = BASE_PATH . '/public/uploads/acreditacion/';
+            if (!is_dir($dest)) mkdir($dest, 0755, true);
+            $archivoUrl = '/uploads/acreditacion/' . time() . '_' . basename($archivo['name']);
+            move_uploaded_file($archivo['tmp_name'], BASE_PATH . '/public' . $archivoUrl);
+        }
+        $this->safeInsert('cal_evidencias_acreditacion', [
+            'evidencia_estandar_id' => $estandarId,
+            'evidencia_servicio_id' => $servicioId,
+            'evidencia_empresa_id' => $empresaId,
+            'evidencia_cumplimiento' => $cumplimiento,
+            'evidencia_puntaje' => $puntaje,
+            'evidencia_observaciones' => $observaciones,
+            'evidencia_archivo_url' => $archivoUrl,
+            'evidencia_usuario_id' => Auth::userId(),
+            'evidencia_fecha' => date('Y-m-d H:i:s'),
+        ]);
+        header('Location: /acreditacion?servicio_evaluado=1'); exit;
+    }
+
+    public function apiServicioHeatmap(): void {
+        $empresaId = (int)($_GET['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $servicios = $this->safeAll("SELECT * FROM cal_servicios_acreditacion WHERE empresa_id=? AND servicio_activo=1", [$empresaId]);
+        $estandares = $this->safeAll("SELECT * FROM cal_estandares_acreditacion WHERE empresa_id=? AND estandar_activo=1", [$empresaId]);
+        $evidencias = $this->safeAll(
+            "SELECT evidencia_estandar_id, evidencia_servicio_id, evidencia_puntaje FROM cal_evidencias_acreditacion WHERE evidencia_empresa_id=?",
+            [$empresaId]
+        );
+        $heatmap = [];
+        foreach ($servicios as $s) {
+            $row = ['servicio' => $s['servicio_nombre']];
+            foreach ($estandares as $e) {
+                $puntaje = 0;
+                foreach ($evidencias as $ev) {
+                    if ($ev['evidencia_estandar_id'] == $e['estandar_id'] && $ev['evidencia_servicio_id'] == $s['servicio_id']) {
+                        $puntaje = (int)$ev['evidencia_puntaje'];
+                    }
+                }
+                $row[$e['estandar_codigo']] = $puntaje;
+            }
+            $heatmap[] = $row;
+        }
+        header('Content-Type: application/json');
+        echo json_encode(['servicios' => $servicios, 'estandares' => $estandares, 'heatmap' => $heatmap]);
+        exit;
+    }
 }
