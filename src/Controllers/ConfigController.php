@@ -213,4 +213,48 @@ class ConfigController {
         $this->safeInsert('sys_comunicaciones', ['empresa_id' => $empresaId, 'comunicacion_modulo' => $_POST['modulo'] ?? 'integrada', 'comunicacion_tipo' => $_POST['tipo'] ?? 'interna', 'comunicacion_que' => $_POST['que'] ?? '', 'comunicacion_cuando' => $_POST['cuando'] ?? '', 'comunicacion_a_quien' => $_POST['a_quien'] ?? '', 'comunicacion_como' => $_POST['como'] ?? '', 'comunicacion_quien' => $_POST['quien'] ?? '']);
         header('Location: /sistema?com_ok=1'); exit;
     }
+
+    // ============================================================
+    // GOBIERNO DE DATOS
+    // ============================================================
+    public function gobiernoDatosDashboard(): void {
+        $empresaId = (int)($_GET['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $catalogo = $this->safeAll("SELECT * FROM sys_catalogo_datos WHERE empresa_id=? ORDER BY catalogo_clasificacion, catalogo_tabla", [$empresaId]);
+        $clasificaciones = $this->safeAll("SELECT * FROM sys_clasificacion_datos WHERE empresa_id=? ORDER BY FIELD(clasificacion_nivel,'critico','sensible','confidencial','interno','publico')", [$empresaId]);
+        $accesos = $this->safeAll("SELECT a.*, u.usuario_nombre FROM sys_auditoria_accesos a LEFT JOIN sys_usuarios u ON a.usuario_id=u.usuario_id WHERE a.empresa_id=? ORDER BY a.acceso_fecha DESC LIMIT 50", [$empresaId]);
+        $consentimientos = $this->safeAll("SELECT * FROM sys_consentimientos WHERE empresa_id=? ORDER BY consentimiento_fecha_otorgamiento DESC", [$empresaId]);
+        $solicitudes = $this->safeAll("SELECT * FROM sys_solicitudes_datos WHERE empresa_id=? ORDER BY solicitud_fecha DESC", [$empresaId]);
+        $metricas = $this->safeAll("SELECT * FROM sys_calidad_datos_metricas WHERE empresa_id=? ORDER BY FIELD(metrica_semaforo,'rojo','amarillo','verde'), metrica_fecha_medicion DESC", [$empresaId]);
+        $linajes = $this->safeAll("SELECT * FROM sys_linaje_datos WHERE empresa_id=? ORDER BY linaje_origen_tabla", [$empresaId]);
+        $retenciones = $this->safeAll("SELECT * FROM sys_politica_retencion WHERE empresa_id=? AND retencion_activo=1 ORDER BY retencion_periodo_meses DESC", [$empresaId]);
+        $pageTitle = 'Gobierno de Datos';
+        ob_start(); require BASE_PATH . '/templates/gobierno_datos.php';
+        $content = ob_get_clean(); require BASE_PATH . '/templates/layout.php';
+    }
+
+    public function crearConsentimiento(): void {
+        $empresaId = (int)($_POST['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $this->safeInsert('sys_consentimientos', ['empresa_id' => $empresaId, 'consentimiento_tipo' => $_POST['tipo'] ?? 'paciente', 'consentimiento_titular_id' => $_POST['titular_id'] ?? '', 'consentimiento_titular_nombre' => $_POST['titular_nombre'] ?? '', 'consentimiento_finalidad' => $_POST['finalidad'] ?? '', 'consentimiento_tratamiento' => $_POST['tratamiento'] ?? 'datos_personales', 'consentimiento_fecha_otorgamiento' => $_POST['fecha_otorgamiento'] ?? date('Y-m-d'), 'consentimiento_medio' => $_POST['medio'] ?? 'fisico']);
+        header('Location: /gobierno-datos?cons_ok=1'); exit;
+    }
+
+    public function crearSolicitudDatos(): void {
+        $empresaId = (int)($_POST['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $this->safeInsert('sys_solicitudes_datos', ['empresa_id' => $empresaId, 'solicitud_tipo' => $_POST['tipo'] ?? 'acceso', 'solicitud_titular_id' => $_POST['titular_id'] ?? '', 'solicitud_titular_nombre' => $_POST['titular_nombre'] ?? '', 'solicitud_fecha' => date('Y-m-d'), 'solicitud_descripcion' => $_POST['descripcion'] ?? '']);
+        header('Location: /gobierno-datos?sol_ok=1'); exit;
+    }
+
+    public function evaluarMetricaCalidad(): void {
+        $id = (int)$_POST['metrica_id'];
+        $this->safeUpdate('sys_calidad_datos_metricas', ['metrica_valor_real' => (float)$_POST['valor_real'], 'metrica_fecha_medicion' => date('Y-m-d'), 'metrica_accion_correctiva' => $_POST['accion'] ?? null], 'metrica_id = ?', [$id]);
+        header('Location: /gobierno-datos?met_ok=1'); exit;
+    }
+
+    public function catalogoDatos(): void {
+        $empresaId = (int)($_GET['empresa_id'] ?? ($_COOKIE['empresa_activa'] ?? 2));
+        $catalogo = $this->safeAll("SELECT * FROM sys_catalogo_datos WHERE empresa_id=? ORDER BY catalogo_clasificacion, catalogo_tabla", [$empresaId]);
+        header('Content-Type: application/json');
+        echo json_encode($catalogo, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        exit;
+    }
 }

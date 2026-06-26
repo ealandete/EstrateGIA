@@ -612,6 +612,13 @@ $router->post('/sistema/politica/guardar', function () { require_once BASE_PATH.
 $router->post('/sistema/contexto/guardar', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->guardarContexto(); });
 $router->post('/sistema/comunicacion/guardar', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->guardarComunicacion(); });
 
+// ===== GOBIERNO DE DATOS =====
+$router->get('/gobierno-datos', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->gobiernoDatosDashboard(); });
+$router->post('/gobierno-datos/consentimiento/crear', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->crearConsentimiento(); });
+$router->post('/gobierno-datos/solicitud/crear', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->crearSolicitudDatos(); });
+$router->post('/gobierno-datos/metrica/evaluar', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->evaluarMetricaCalidad(); });
+$router->get('/gobierno-datos/catalogo', function () { require_once BASE_PATH.'/src/Controllers/ConfigController.php'; (new ConfigController())->catalogoDatos(); });
+
 // ===== LICENCIAS (SUPER_ADMIN only) — Politica 23 §5.3 =====
 
 // ===== DESCARGAS =====
