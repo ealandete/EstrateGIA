@@ -645,6 +645,21 @@ $router->get('/docs/openapi.json', function () {
 });
 
 // ===== SSE DASHBOARD TIEMPO REAL =====
+
+// ===== AMEIA HEALTH CHECK =====
+$router->get('/api/health', function () {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([
+        'status' => 'ok',
+        'app' => 'AMEIA-EstrateGIA',
+        'version' => '2.1.0',
+        'sector' => 'salud',
+        'db' => 'connected',
+        'php' => PHP_VERSION,
+        'timestamp' => date('c')
+    ]);
+    exit;
+});
 $router->get('/api/alertas/vencimientos', function () {
     header('Content-Type: application/json; charset=utf-8');
     header('Access-Control-Allow-Origin: *');

@@ -30,7 +30,7 @@ if ($uri === '/api/health') {
         $fks = (int)($f['cnt'] ?? 0);
         $db = 'ok';
     } catch (\Throwable $e) { $db = $e->getMessage(); }
-    echo json_encode(['status'=>'ok','app'=>'EstrateGIA','version'=>'1.0','db_tables'=>$tables,'timestamp'=>date('c')]);
+    echo json_encode(['status'=>'ok','app'=>'AMEIA-EstrateGIA','version'=>'2.1.0','sector'=>'salud','db_tables'=>$tables,'db'=>'connected','php'=>PHP_VERSION,'timestamp'=>date('c')]);
     exit;
 }
 

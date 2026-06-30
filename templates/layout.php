@@ -11,10 +11,10 @@ $navPlanId = ($_COOKIE['plan_activo'] ?? null) ?: ($_GET['plan_id'] ?? null);
 // Cargar configuración de empresa activa para estilos y parametrización
 $empresaActivaId = $core->getEmpresaActiva();
 $empresaConfig = $core->getEmpresaConfig($empresaActivaId);
-$empresaColorPrimario = $empresaConfig['empresa_color_primario']['valor'] ?? '#1a73e8';
-$empresaColorSecundario = $empresaConfig['empresa_color_secundario']['valor'] ?? '#1557b0';
+$empresaColorPrimario = $empresaConfig['empresa_color_primario']['valor'] ?? '#38bdf8';
+$empresaColorSecundario = $empresaConfig['empresa_color_secundario']['valor'] ?? '#818cf8';
 $empresaLogoUrl = $empresaConfig['empresa_logo_url']['valor'] ?? '';
-$empresaModoOscuro = (int)($empresaConfig['empresa_modo_oscuro_default']['valor'] ?? 0);
+$empresaModoOscuro = (int)($empresaConfig['empresa_modo_oscuro_default']['valor'] ?? 1);
 $empresaIdioma = $empresaConfig['empresa_idioma_default']['valor'] ?? 'es';
 
 $menuGroups = [
